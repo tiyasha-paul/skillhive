@@ -117,7 +117,7 @@ export async function createTimetableSession(
       });
       throw error;
     }
-    
+
     return data;
   } catch (error: any) {
     console.error('Error creating timetable session:', error);
@@ -137,7 +137,7 @@ export async function updateTimetableSession(
   try {
     // Only include fields that exist in the database table
     const updateData: any = {};
-    
+
     if (updates.subject !== undefined) updateData.subject = updates.subject;
     if (updates.day !== undefined) updateData.day = updates.day;
     if (updates.start_time !== undefined) updateData.start_time = updates.start_time;
@@ -213,7 +213,7 @@ export async function getUpcomingSessions(userId: string): Promise<TimetableSess
     const allSessions = await getTimetableSessions(userId);
     const now = new Date();
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    
+
     const dayNames: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const todayDay = dayNames[now.getDay()];
     const tomorrowDay = dayNames[tomorrow.getDay()];
@@ -256,56 +256,68 @@ export function getSessionStatus(session: TimetableSession): SessionStatus {
   const now = new Date();
   const dayNames: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const todayDay = dayNames[now.getDay()];
-  
+
   // Check if session is marked as completed in localStorage
-  const completedSessions = JSON.parse(localStorage.getItem('completed_sessions') || '[]');
+  const key = getCompletedSessionsKey();
+  const completedSessions = JSON.parse(localStorage.getItem(key) || '[]');
   if (session.id && completedSessions.includes(session.id)) {
     return 'completed';
   }
-  
+
   // If session is marked as completed (legacy check)
   if (session.status === 'completed' || session.completed_at) {
     return 'completed';
   }
-  
+
   // Check if session is for today
   if (session.day !== todayDay) {
     return 'upcoming';
   }
-  
+
   const sessionTime = parseTime(session.start_time);
   const endTime = parseTime(session.end_time);
-  
+
   const sessionStart = new Date(now);
   sessionStart.setHours(sessionTime.hours, sessionTime.minutes, 0, 0);
-  
+
   const sessionEnd = new Date(now);
   sessionEnd.setHours(endTime.hours, endTime.minutes, 0, 0);
-  
+
   // Check if session is missed (past end time and not completed)
   if (now > sessionEnd) {
     return 'missed';
   }
-  
+
   // Check if session is active (between start and end time)
   if (now >= sessionStart && now <= sessionEnd) {
     return 'active';
   }
-  
+
   // Session is upcoming
   return 'upcoming';
 }
 
 // Mark session as completed
+// Mark session as completed
 // Note: This uses localStorage since status/completed_at columns don't exist in DB
+const BASE_COMPLETED_SESSIONS_KEY = 'completed_sessions';
+let currentUserId: string | null = null;
+
+export function setTimetableServiceUserId(userId: string | null) {
+  currentUserId = userId;
+}
+
+function getCompletedSessionsKey(): string {
+  return currentUserId ? `user_${currentUserId}_${BASE_COMPLETED_SESSIONS_KEY}` : BASE_COMPLETED_SESSIONS_KEY;
+}
+
 export async function markSessionCompleted(sessionId: string): Promise<boolean> {
   try {
-    // Store completion in localStorage for now
-    // In production, you'd add status and completed_at columns to the database
-    const completedSessions = JSON.parse(localStorage.getItem('completed_sessions') || '[]');
+    const key = getCompletedSessionsKey();
+    const completedSessions = JSON.parse(localStorage.getItem(key) || '[]');
     if (!completedSessions.includes(sessionId)) {
       completedSessions.push(sessionId);
-      localStorage.setItem('completed_sessions', JSON.stringify(completedSessions));
+      localStorage.setItem(key, JSON.stringify(completedSessions));
     }
     return true;
   } catch (error) {

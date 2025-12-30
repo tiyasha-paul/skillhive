@@ -14,6 +14,11 @@ export interface Goal {
 }
 
 const STORAGE_KEY_PREFIX = 'student_goals_';
+let currentUserId: string | null = null;
+
+export function setGoalServiceUserId(userId: string | null) {
+  currentUserId = userId;
+}
 
 // Get today's date string (YYYY-MM-DD)
 function getTodayDateString(): string {
@@ -22,7 +27,8 @@ function getTodayDateString(): string {
 
 // Get storage key for a specific date
 function getStorageKey(date?: string): string {
-  return `${STORAGE_KEY_PREFIX}${date || getTodayDateString()}`;
+  const prefix = currentUserId ? `user_${currentUserId}_${STORAGE_KEY_PREFIX}` : STORAGE_KEY_PREFIX;
+  return `${prefix}${date || getTodayDateString()}`;
 }
 
 // Get goals for a specific date (defaults to today)

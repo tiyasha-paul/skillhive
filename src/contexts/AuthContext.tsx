@@ -2,6 +2,10 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { setGoalServiceUserId } from '@/services/goals';
+import { setQuizServiceUserId } from '@/services/quizResults';
+import { setActivityServiceUserId } from '@/services/activityTracker';
+import { setTimetableServiceUserId } from '@/services/timetable';
 
 type UserRole = 'student' | 'mentor' | 'admin';
 
@@ -24,13 +28,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Helper to sync services with user ID
+  const syncServicesWithUser = (userId: string | null) => {
+    setGoalServiceUserId(userId);
+    setQuizServiceUserId(userId);
+    setActivityServiceUserId(userId);
+    setTimetableServiceUserId(userId);
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+        syncServicesWithUser(session?.user?.id ?? null);
+
         // Fetch user role when session changes
         if (session?.user) {
           setTimeout(async () => {
@@ -39,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .select('role')
               .eq('id', session.user.id)
               .maybeSingle();
-            
+
             if (profile) {
               setUserRole(profile.role as UserRole);
             }
@@ -47,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setUserRole(null);
         }
-        
+
         setLoading(false);
       }
     );
@@ -56,7 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+      syncServicesWithUser(session?.user?.id ?? null);
+
       if (session?.user) {
         supabase
           .from('profiles')
@@ -87,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string, role: UserRole) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -107,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setSession(null);
     setUserRole(null);
+    syncServicesWithUser(null);
     navigate('/');
   };
 

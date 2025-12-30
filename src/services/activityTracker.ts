@@ -15,7 +15,16 @@ export type ActivityType =
   | 'practice_viewed'
   | 'resume_analyzed';
 
-const STORAGE_KEY = 'student_activity';
+const BASE_STORAGE_KEY = 'student_activity';
+let currentUserId: string | null = null;
+
+export function setActivityServiceUserId(userId: string | null) {
+  currentUserId = userId;
+}
+
+function getStorageKey(): string {
+  return currentUserId ? `user_${currentUserId}_${BASE_STORAGE_KEY}` : BASE_STORAGE_KEY;
+}
 
 // Record an activity
 export function recordActivity(type: ActivityType, metadata?: Record<string, any>): void {
@@ -36,13 +45,13 @@ export function recordActivity(type: ActivityType, metadata?: Record<string, any
   oneYearAgo.setDate(oneYearAgo.getDate() - 365);
   const filtered = activities.filter(a => new Date(a.date) >= oneYearAgo);
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  localStorage.setItem(getStorageKey(), JSON.stringify(filtered));
 }
 
 // Get activity records
 export function getActivityRecords(): ActivityRecord[] {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(getStorageKey());
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];

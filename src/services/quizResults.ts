@@ -41,7 +41,16 @@ export interface QuizResult {
   createdAt: string;
 }
 
-const STORAGE_KEY = 'quiz_results';
+const BASE_STORAGE_KEY = 'quiz_results';
+let currentUserId: string | null = null;
+
+export function setQuizServiceUserId(userId: string | null) {
+  currentUserId = userId;
+}
+
+function getStorageKey(): string {
+  return currentUserId ? `user_${currentUserId}_${BASE_STORAGE_KEY}` : BASE_STORAGE_KEY;
+}
 
 // Save quiz result
 export function saveQuizResult(result: Omit<QuizResult, 'id' | 'createdAt'>): QuizResult {
@@ -52,14 +61,14 @@ export function saveQuizResult(result: Omit<QuizResult, 'id' | 'createdAt'>): Qu
     createdAt: new Date().toISOString(),
   };
   results.push(newResult);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
+  localStorage.setItem(getStorageKey(), JSON.stringify(results));
   return newResult;
 }
 
 // Get all quiz results
 export function getQuizResults(): QuizResult[] {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(getStorageKey());
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
@@ -76,7 +85,7 @@ export function getQuizResultById(id: string): QuizResult | null {
 export function deleteQuizResult(id: string): boolean {
   const results = getQuizResults();
   const filtered = results.filter(r => r.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  localStorage.setItem(getStorageKey(), JSON.stringify(filtered));
   return filtered.length < results.length;
 }
 

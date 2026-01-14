@@ -24,6 +24,7 @@ import StudentJobs from "./pages/student/StudentJobs";
 import StudentTimetable from "./pages/student/StudentTimetable";
 import StudentProfile from "./pages/student/StudentProfile";
 import StudentSettings from "./pages/student/StudentSettings";
+import StudentExtension from "./pages/student/StudentExtension";
 
 // Mentor Pages
 import MentorSignup from "./pages/mentor/MentorSignup";
@@ -105,6 +106,14 @@ const App = () => (
                   element={
                     <ProtectedRoute allowedRoles={["student"]}>
                       <StudentPodcasts />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/student/extension"
+                  element={
+                    <ProtectedRoute allowedRoles={["student"]}>
+                      <StudentExtension />
                     </ProtectedRoute>
                   }
                 />

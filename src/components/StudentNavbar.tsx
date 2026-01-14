@@ -113,6 +113,13 @@ export function StudentNavbar() {
               Podcasts
             </button>
 
+            <button
+              onClick={() => navigate('/student/extension')}
+              className="text-sm font-medium hover:text-primary-foreground/80 transition-colors"
+            >
+              Extension
+            </button>
+
             {/* Jobs Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

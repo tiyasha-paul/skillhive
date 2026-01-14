@@ -111,7 +111,7 @@ function checkDistractionAlert(category) {
 
         // Check if enough time has passed since last alert
         if (state.lastAlertTime && (now - state.lastAlertTime >= intervalMs)) {
-            // Trigger Alert
+            // Trigger System Notification
             chrome.notifications.create({
                 type: 'basic',
                 iconUrl: 'icons/icon128.png',
@@ -119,6 +119,17 @@ function checkDistractionAlert(category) {
                 message: `You've been on ${category} sites for over ${intervalMinutes} minutes. Time to refocus?`,
                 priority: 2
             });
+
+            // Trigger In-Page Alert (Overlay)
+            chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
+                if (tabs && tabs.length > 0) {
+                    chrome.tabs.sendMessage(tabs[0].id, {
+                        type: 'SHOW_ALERT',
+                        message: `You've been on ${category} sites for over ${intervalMinutes} minutes. Time to refocus?`
+                    }).catch(err => console.log('Could not send alert to tab:', err));
+                }
+            });
+
             // Update last alert time
             chrome.storage.local.set({ distractionState: { ...state, lastAlertTime: now } });
         }

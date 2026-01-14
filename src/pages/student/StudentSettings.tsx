@@ -492,49 +492,61 @@ export default function StudentSettings() {
           </Card>
         </div>
 
-        {extensionDetected && (
-          <div className="grid gap-6 lg:grid-cols-1">
-            <Card className="border-blue-500/20 bg-blue-50/10 dark:bg-blue-900/10">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  Extension Settings
+        <div className="grid gap-6 lg:grid-cols-1">
+          <Card className={`border-blue-500/20 bg-blue-50/10 dark:bg-blue-900/10 ${!extensionDetected ? 'opacity-80' : ''}`}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Extension Settings
+                {extensionDetected ? (
                   <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Active</span>
-                </CardTitle>
-                <CardDescription>Configure how the browser extension interacts with you</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <p className="text-sm font-medium">Distraction Alerts</p>
-                    <p className="text-xs text-muted-foreground">Get notified when you spend too much time on distracting sites</p>
-                  </div>
-                  <Switch checked={alertSettings.enabled} onCheckedChange={(checked) => handleAlertSettingChange('enabled', checked)} />
-                </div>
-
-                {alertSettings.enabled && (
-                  <div className="space-y-2">
-                    <Label>Alert Frequency</Label>
-                    <Select value={alertSettings.interval} onValueChange={(value) => handleAlertSettingChange('interval', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Frequency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Every 1 minute (Strict)</SelectItem>
-                        <SelectItem value="3">Every 3 minutes</SelectItem>
-                        <SelectItem value="5">Every 5 minutes</SelectItem>
-                        <SelectItem value="10">Every 10 minutes</SelectItem>
-                        <SelectItem value="15">Every 15 minutes</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      You will receive a system notification every {alertSettings.interval} minutes while on a distraction site.
-                    </p>
-                  </div>
+                ) : (
+                  <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">Not Detected</span>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+              </CardTitle>
+              <CardDescription>Configure how the browser extension interacts with you</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!extensionDetected && (
+                <Alert className="bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800/50 mb-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Extension not responding?</AlertTitle>
+                  <AlertDescription>
+                    If you recently reloaded the extension, please <strong>refresh this page</strong> to reconnect.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div>
+                  <p className="text-sm font-medium">Distraction Alerts</p>
+                  <p className="text-xs text-muted-foreground">Get notified when you spend too much time on distracting sites</p>
+                </div>
+                <Switch checked={alertSettings.enabled} onCheckedChange={(checked) => handleAlertSettingChange('enabled', checked)} disabled={!extensionDetected} />
+              </div>
+
+              {alertSettings.enabled && (
+                <div className="space-y-2">
+                  <Label>Alert Frequency</Label>
+                  <Select value={alertSettings.interval} onValueChange={(value) => handleAlertSettingChange('interval', value)} disabled={!extensionDetected}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Every 1 minute (Strict)</SelectItem>
+                      <SelectItem value="3">Every 3 minutes</SelectItem>
+                      <SelectItem value="5">Every 5 minutes</SelectItem>
+                      <SelectItem value="10">Every 10 minutes</SelectItem>
+                      <SelectItem value="15">Every 15 minutes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    You will receive a system notification every {alertSettings.interval} minutes while on a distraction site.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         <Card>
           <CardHeader>

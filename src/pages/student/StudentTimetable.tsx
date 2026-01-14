@@ -45,6 +45,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { getSyncEnabled, setSyncEnabled } from '@/services/syncSettings';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 export default function StudentTimetable() {
   const { user } = useAuth();
@@ -55,8 +56,9 @@ export default function StudentTimetable() {
   const [editingSession, setEditingSession] = useState<TimetableSession | null>(null);
   const [deletingSession, setDeletingSession] = useState<TimetableSession | null>(null);
   const [viewingSession, setViewingSession] = useState<TimetableSession | null>(null);
-  const [view, setView] = useState<'weekly' | 'daily'>('weekly');
+  const [view, setView] = useState<'weekly' | 'daily' | 'monthly'>('monthly');
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>('Monday');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [sessionStatuses, setSessionStatuses] = useState<Map<string, SessionStatus>>(new Map());
   const [syncEnabled, setSyncEnabledState] = useState(getSyncEnabled());
 
@@ -727,8 +729,9 @@ export default function StudentTimetable() {
           </Card>
         )}
 
-        <Tabs value={view} onValueChange={(v) => setView(v as 'weekly' | 'daily')} className="space-y-4">
+        <Tabs value={view} onValueChange={(v) => setView(v as 'weekly' | 'daily' | 'monthly')} className="space-y-4">
           <TabsList>
+            <TabsTrigger value="monthly">Monthly View</TabsTrigger>
             <TabsTrigger value="weekly">Weekly View</TabsTrigger>
             <TabsTrigger value="daily">Daily View</TabsTrigger>
           </TabsList>
@@ -754,22 +757,20 @@ export default function StudentTimetable() {
                   const daySessions = getSessionsForDay(day);
 
                   // Calculate the date for this day
+                  // Anchor to the current week (starting Monday)
                   const today = new Date();
-                  const currentDayIndex = today.getDay();
-                  const dayIndexMap: Record<DayOfWeek, number> = {
-                    'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
-                    'Thursday': 4, 'Friday': 5, 'Saturday': 6
-                  };
+                  const jsDay = today.getDay(); // 0=Sun, 1=Mon...
+                  const currentMonIndex = (jsDay + 6) % 7; // Convert to 0=Mon, ... 6=Sun
 
-                  const targetDayIndex = dayIndexMap[day];
-                  let daysToAdd = targetDayIndex - currentDayIndex;
-                  if (daysToAdd < 0) daysToAdd += 7;
+                  // daysOfWeek array is ['Monday', ... 'Sunday'] so index 0 is Monday
+                  // The difference between the column index and today's index gives the day offset
+                  const daysDiff = index - currentMonIndex;
 
                   const dayDate = new Date(today);
-                  dayDate.setDate(today.getDate() + daysToAdd);
+                  dayDate.setDate(today.getDate() + daysDiff);
 
                   const dateNum = dayDate.getDate();
-                  const isToday = daysToAdd === 0;
+                  const isToday = daysDiff === 0;
 
                   // Calculate current time position for the red line indicator
                   const now = new Date();
@@ -825,31 +826,21 @@ export default function StudentTimetable() {
           {/* Daily View */}
           <TabsContent value="daily" className="space-y-4">
             <div className="flex gap-2 mb-4">
-              {daysOfWeek.map((day) => {
+              {daysOfWeek.map((day, index) => {
                 // Calculate the date for this day
+                // Anchor to the current week (starting Monday)
                 const today = new Date();
-                const currentDayIndex = today.getDay();
-                const dayIndexMap: Record<DayOfWeek, number> = {
-                  'Sunday': 0,
-                  'Monday': 1,
-                  'Tuesday': 2,
-                  'Wednesday': 3,
-                  'Thursday': 4,
-                  'Friday': 5,
-                  'Saturday': 6
-                };
+                const jsDay = today.getDay(); // 0=Sun, 1=Mon...
+                const currentMonIndex = (jsDay + 6) % 7; // Convert to 0=Mon, ... 6=Sun
 
-                const targetDayIndex = dayIndexMap[day];
-                let daysToAdd = targetDayIndex - currentDayIndex;
-
-                if (daysToAdd < 0) {
-                  daysToAdd += 7;
-                }
+                // daysOfWeek array is ['Monday', ... 'Sunday'] so index 0 is Monday
+                // The difference between the column index and today's index gives the day offset
+                const daysDiff = index - currentMonIndex;
 
                 const dayDate = new Date(today);
-                dayDate.setDate(today.getDate() + daysToAdd);
+                dayDate.setDate(today.getDate() + daysDiff);
                 const dateString = dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                const isToday = daysToAdd === 0;
+                const isToday = daysDiff === 0;
 
                 return (
                   <Button
@@ -874,26 +865,19 @@ export default function StudentTimetable() {
                   <span className="text-sm font-normal text-muted-foreground">
                     ({(() => {
                       const today = new Date();
-                      const currentDayIndex = today.getDay();
+                      const jsDay = today.getDay(); // 0=Sun, 1=Mon...
+                      const currentMonIndex = (jsDay + 6) % 7; // Convert to 0=Mon, ... 6=Sun
+
                       const dayIndexMap: Record<DayOfWeek, number> = {
-                        'Sunday': 0,
-                        'Monday': 1,
-                        'Tuesday': 2,
-                        'Wednesday': 3,
-                        'Thursday': 4,
-                        'Friday': 5,
-                        'Saturday': 6
+                        'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3,
+                        'Friday': 4, 'Saturday': 5, 'Sunday': 6
                       };
 
-                      const targetDayIndex = dayIndexMap[selectedDay];
-                      let daysToAdd = targetDayIndex - currentDayIndex;
-
-                      if (daysToAdd < 0) {
-                        daysToAdd += 7;
-                      }
+                      const targetIndex = dayIndexMap[selectedDay];
+                      const daysDiff = targetIndex - currentMonIndex;
 
                       const dayDate = new Date(today);
-                      dayDate.setDate(today.getDate() + daysToAdd);
+                      dayDate.setDate(today.getDate() + daysDiff);
                       return dayDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
                     })()})
                   </span>
@@ -917,6 +901,65 @@ export default function StudentTimetable() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+
+          {/* Monthly View */}
+          <TabsContent value="monthly" className="space-y-4">
+            <div className="flex flex-col md:flex-row gap-6">
+              <Card className="flex-none">
+                <CardContent className="p-4">
+                  <CalendarComponent
+                    mode="single"
+                    selected={selectedDate} // Use selectedDate state
+                    onSelect={(date) => {
+                      if (date) {
+                        setSelectedDate(date);
+                        const days: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                        const dayName = days[date.getDay()];
+                        setSelectedDay(dayName);
+                      }
+                    }}
+                    className="rounded-md border"
+                    modifiers={{
+                      hasSession: (date) => {
+                        const days: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                        const dayName = days[date.getDay()];
+                        return getSessionsForDay(dayName).length > 0;
+                      }
+                    }}
+                    modifiersStyles={{
+                      hasSession: { fontWeight: 'bold', textDecoration: 'underline', color: 'var(--primary)' }
+                    }}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card className="flex-1">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    Sessions for {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                    <span className="text-sm font-normal text-muted-foreground ml-auto">
+                      (Recurring Weekly Schedule)
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {getSessionsForDay(selectedDay).length === 0 ? (
+                    <div className="text-center py-12">
+                      <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">No sessions scheduled for {selectedDay}s</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {getSessionsForDay(selectedDay).map((session) => (
+                        <SessionCard key={session.id} session={session} />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
 
@@ -1028,6 +1071,6 @@ export default function StudentTimetable() {
           </AlertDialogContent>
         </AlertDialog>
       </main>
-    </div>
+    </div >
   );
 }

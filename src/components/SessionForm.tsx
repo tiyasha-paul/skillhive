@@ -5,6 +5,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import type { TimetableSession, DayOfWeek, Priority } from '@/services/timetable';
 import { generateColorForSubject } from '@/services/timetable';
 
@@ -26,6 +32,9 @@ export function SessionForm({ open, onClose, onSubmit, initialData }: SessionFor
     notes: '',
     color: '',
   });
+
+  const [selectByDate, setSelectByDate] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (initialData) {
@@ -55,7 +64,7 @@ export function SessionForm({ open, onClose, onSubmit, initialData }: SessionFor
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.subject || !formData.start_time || !formData.end_time) {
       alert('Please fill in all required fields');
       return;
@@ -73,12 +82,12 @@ export function SessionForm({ open, onClose, onSubmit, initialData }: SessionFor
     }
 
     const color = formData.color || generateColorForSubject(formData.subject);
-    
+
     await onSubmit({
       ...formData,
       color,
     });
-    
+
     onClose();
   };
 
@@ -121,22 +130,70 @@ export function SessionForm({ open, onClose, onSubmit, initialData }: SessionFor
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="day">Day of Week *</Label>
-              <Select
-                value={formData.day}
-                onValueChange={(value) => setFormData({ ...formData, day: value as DayOfWeek })}
-              >
-                <SelectTrigger id="day">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {daysOfWeek.map((day) => (
-                    <SelectItem key={day} value={day}>
-                      {day}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="day">Day of Week *</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Select by Date</span>
+                  <Switch
+                    checked={selectByDate}
+                    onCheckedChange={setSelectByDate}
+                    className="scale-75"
+                  />
+                </div>
+              </div>
+
+              {selectByDate ? (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => {
+                        setSelectedDate(date);
+                        if (date) {
+                          const days: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                          const dayName = days[date.getDay()];
+                          setFormData({ ...formData, day: dayName });
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Select
+                  value={formData.day}
+                  onValueChange={(value) => setFormData({ ...formData, day: value as DayOfWeek })}
+                >
+                  <SelectTrigger id="day">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {daysOfWeek.map((day) => (
+                      <SelectItem key={day} value={day}>
+                        {day}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {selectByDate && selectedDate && (
+                <p className="text-xs text-muted-foreground">
+                  This will add a recurring session every <span className="font-medium text-primary">{formData.day}</span>
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

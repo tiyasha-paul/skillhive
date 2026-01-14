@@ -151,12 +151,15 @@ export function ActivityHeatmap() {
       <CardContent className="px-0 pb-0 overflow-hidden">
         <div className="flex flex-col gap-0.5 mt-2">
           {/* Month Labels */}
-          <div className="flex h-5 text-[10px] text-muted-foreground ml-8">
+          <div className="relative h-5 text-[10px] text-muted-foreground ml-8 w-full">
             {monthLabels.map((label, i) => (
               <div
                 key={i}
-                style={{ marginLeft: i === 0 ? `${label.index * 11}px` : `${(label.index - monthLabels[i - 1].index - 1) * 11}px` }}
-                className="flex-none w-8"
+                style={{ 
+                  position: 'absolute',
+                  left: `${label.index * 11}px` 
+                }}
+                className="transform -translate-x-1/2"
               >
                 {label.month}
               </div>

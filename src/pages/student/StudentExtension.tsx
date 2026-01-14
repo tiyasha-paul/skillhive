@@ -25,7 +25,10 @@ export default function StudentExtension() {
     useEffect(() => {
         // Listen for data from extension content script
         const handleMessage = (event: MessageEvent) => {
+            if (event.source !== window) return;
+
             if (event.data.type === 'SKILLHIVE_EXTENSION_DATA') {
+                console.log('Dashboard: Received Extension Data', event.data.payload);
                 const log: ActivityEntry[] = event.data.payload || [];
                 setIsConnected(true);
                 setActivityLog(log);
@@ -36,10 +39,12 @@ export default function StudentExtension() {
         window.addEventListener('message', handleMessage);
 
         // Request initial data
+        console.log('Dashboard: requesting extension data...');
         window.postMessage({ type: 'REQUEST_EXTENSION_DATA' }, '*');
 
         // Poll for connection/data every 2 seconds
         const interval = setInterval(() => {
+            console.log('Dashboard: polling for extension...');
             window.postMessage({ type: 'REQUEST_EXTENSION_DATA' }, '*');
         }, 2000);
 
@@ -94,7 +99,7 @@ export default function StudentExtension() {
                         </p>
                     </div>
 
-                    <Button size="lg" className="gap-2" onClick={() => window.alert('This would trigger the download of the extension zip file.')}>
+                    <Button size="lg" className="gap-2" onClick={() => window.open('/extension.zip', '_blank')}>
                         <Chrome className="w-5 h-5" />
                         Download Extension
                     </Button>
@@ -106,6 +111,8 @@ export default function StudentExtension() {
                         <AlertTitle>Extension not detected</AlertTitle>
                         <AlertDescription>
                             Please install the extension and reload this page to see your real-time stats.
+                            <br />
+                            <span className="text-xs opacity-70">Check browser console (F12) for logs if issues persist.</span>
                         </AlertDescription>
                     </Alert>
                 )}

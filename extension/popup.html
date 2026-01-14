@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>SkillHive Tracker</title>
     <style>
@@ -8,75 +9,192 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 16px;
-            background-color: #0f172a; /* Slate 900 */
-            color: #f8fafc; /* Slate 50 */
+            background-color: #f8fafc;
+            color: #0f172a;
         }
-        h2 {
-            margin-top: 0;
-            font-size: 18px;
+
+        .header {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            margin-bottom: 16px;
         }
+
+        .logo {
+            width: 24px;
+            height: 24px;
+            background-color: #2563eb;
+            border-radius: 6px;
+        }
+
+        h1 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 12px;
+        }
+
         .stats-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .card {
-            background-color: #1e293b; /* Slate 800 */
-            padding: 12px;
-            border-radius: 8px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
             text-align: center;
+            margin-bottom: 16px;
         }
-        .card label {
-            font-size: 12px;
-            color: #94a3b8; /* Slate 400 */
-            display: block;
-            margin-bottom: 4px;
+
+        .stat-item h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 4px 0;
         }
-        .card .value {
-            font-size: 20px;
-            font-weight: bold;
+
+        .stat-item p {
+            font-size: 10px;
+            color: #64748b;
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: 600;
         }
-        .learning { color: #4ade80; }
-        .distraction { color: #f87171; }
-        .open-dashboard {
+
+        .text-green {
+            color: #16a34a;
+        }
+
+        .text-yellow {
+            color: #ca8a04;
+        }
+
+        .text-red {
+            color: #dc2626;
+        }
+
+        .chart-container {
+            margin-top: 8px;
+        }
+
+        .bar-chart {
+            display: flex;
+            height: 24px;
             width: 100%;
-            padding: 10px;
-            background-color: #3b82f6; /* Blue 500 */
+            background-color: #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .bar-segment {
+            height: 100%;
+        }
+
+        .bar-green {
+            background-color: #22c55e;
+        }
+
+        .bar-yellow {
+            background-color: #eab308;
+        }
+
+        .bar-red {
+            background-color: #ef4444;
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            font-size: 10px;
+            color: #64748b;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            background-color: #0f172a;
             color: white;
             border: none;
             border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
             cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
+            text-align: center;
+            text-decoration: none;
         }
-        .open-dashboard:hover {
-            background-color: #2563eb; /* Blue 600 */
+
+        .btn:hover {
+            background-color: #1e293b;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: #e2e8f0;
+            margin: 12px 0;
         }
     </style>
 </head>
+
 <body>
-    <h2>
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        SkillHive Tracker
-    </h2>
-    
-    <div class="stats-grid">
-        <div class="card">
-            <label>Learning</label>
-            <div id="learning-time" class="value learning">0m</div>
+    <div class="header">
+        <div class="logo"></div>
+        <h1>SkillHive Focus</h1>
+    </div>
+
+    <div class="card">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h2 id="learning-time" class="text-green">--</h2>
+                <p>Learning</p>
+            </div>
+            <div class="stat-item">
+                <h2 id="mixed-time" class="text-yellow">--</h2>
+                <p>Mixed</p>
+            </div>
+            <div class="stat-item">
+                <h2 id="distraction-time" class="text-red">--</h2>
+                <p>Distract</p>
+            </div>
         </div>
-        <div class="card">
-            <label>Distraction</label>
-            <div id="distraction-time" class="value distraction">0m</div>
+
+        <div class="chart-container">
+            <div class="bar-chart" id="day-chart">
+                <!-- Segments injected by JS -->
+            </div>
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <div class="dot bar-green"></div> Learn
+                </div>
+                <div class="legend-item">
+                    <div class="dot bar-yellow"></div> Mixed
+                </div>
+                <div class="legend-item">
+                    <div class="dot bar-red"></div> Distract
+                </div>
+            </div>
         </div>
     </div>
 
-    <button id="open-dashboard" class="open-dashboard">Open Dashboard</button>
+
 
     <script src="popup.js"></script>
 </body>
+
 </html>

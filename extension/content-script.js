@@ -21,7 +21,13 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     }
 });
 
-// Listen for requests from the web app
+// Listen for settings updates from Dashboard
+document.addEventListener('SKILLHIVE_EXTENSION_SETTINGS', (event) => {
+    console.log('Content Script: Received Settings Update', event.detail);
+    chrome.runtime.sendMessage({ type: 'UPDATE_SETTINGS', settings: event.detail });
+});
+
+// Original Listeners
 window.addEventListener('message', (event) => {
     // We only care about messages from the same window
     if (event.source !== window) return;

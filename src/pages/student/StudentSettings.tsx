@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StudentNavbar } from '@/components/StudentNavbar';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -14,6 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -89,6 +91,55 @@ export default function StudentSettings() {
     useLearningData: true,
     tone: 'teacher',
   });
+
+  /* Extension Settings State */
+  const [extensionDetected, setExtensionDetected] = useState(false);
+  const [alertSettings, setAlertSettings] = useState({
+    enabled: true,
+    interval: '5', // minutes
+  });
+
+  useEffect(() => {
+    // Check for extension via postMessage (same as Dashboard)
+    const handleMessage = (event: MessageEvent) => {
+      if (event.source !== window) return;
+
+      if (event.data.type === 'SKILLHIVE_EXTENSION_DATA') {
+        console.log('Settings: Extension Detected');
+        setExtensionDetected(true);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Poll for extension
+    const checkExtension = () => {
+      window.postMessage({ type: 'REQUEST_EXTENSION_DATA' }, '*');
+    };
+
+    checkExtension();
+    const interval = setInterval(checkExtension, 2000);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const handleAlertSettingChange = (key: keyof typeof alertSettings, value: string | boolean) => {
+    const newSettings = { ...alertSettings, [key]: value };
+    setAlertSettings(newSettings);
+
+    // Send to Extension via CustomEvent
+    document.dispatchEvent(new CustomEvent('SKILLHIVE_EXTENSION_SETTINGS', {
+      detail: newSettings
+    }));
+
+    toast({
+      title: "Extension Settings Updated",
+      description: `Distraction alerts set to every ${newSettings.interval} minutes.`
+    });
+  };
 
   const [jobs, setJobs] = useState({
     locations: 'Global / Remote first',
@@ -441,6 +492,50 @@ export default function StudentSettings() {
           </Card>
         </div>
 
+        {extensionDetected && (
+          <div className="grid gap-6 lg:grid-cols-1">
+            <Card className="border-blue-500/20 bg-blue-50/10 dark:bg-blue-900/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  Extension Settings
+                  <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Active</span>
+                </CardTitle>
+                <CardDescription>Configure how the browser extension interacts with you</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <div>
+                    <p className="text-sm font-medium">Distraction Alerts</p>
+                    <p className="text-xs text-muted-foreground">Get notified when you spend too much time on distracting sites</p>
+                  </div>
+                  <Switch checked={alertSettings.enabled} onCheckedChange={(checked) => handleAlertSettingChange('enabled', checked)} />
+                </div>
+
+                {alertSettings.enabled && (
+                  <div className="space-y-2">
+                    <Label>Alert Frequency</Label>
+                    <Select value={alertSettings.interval} onValueChange={(value) => handleAlertSettingChange('interval', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Every 1 minute (Strict)</SelectItem>
+                        <SelectItem value="3">Every 3 minutes</SelectItem>
+                        <SelectItem value="5">Every 5 minutes</SelectItem>
+                        <SelectItem value="10">Every 10 minutes</SelectItem>
+                        <SelectItem value="15">Every 15 minutes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      You will receive a system notification every {alertSettings.interval} minutes while on a distraction site.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Logout</CardTitle>
@@ -469,5 +564,3 @@ export default function StudentSettings() {
     </div>
   );
 }
-
-

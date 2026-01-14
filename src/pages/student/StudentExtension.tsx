@@ -2,8 +2,19 @@ import { useState, useEffect } from 'react';
 import { StudentNavbar } from '@/components/StudentNavbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Chrome, Activity, Brain, MessageSquare, AlertCircle } from 'lucide-react';
+import { Download, Chrome, Activity, Brain, AlertCircle, Clock } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer
+} from 'recharts';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ActivityEntry {
     url: string;
@@ -13,14 +24,23 @@ interface ActivityEntry {
     startTime: number;
 }
 
+interface Item {
+    domain: string;
+    duration: number;
+    category: string;
+}
+
 export default function StudentExtension() {
     const [isConnected, setIsConnected] = useState(false);
     const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
     const [stats, setStats] = useState({
         learningTime: 0, // seconds
         distractionTime: 0, // seconds
+        mixedTime: 0, // seconds
         focusScore: 0, // percentage
     });
+    const [weeklyData, setWeeklyData] = useState<any[]>([]);
+    const [topSites, setTopSites] = useState<Item[]>([]);
 
     useEffect(() => {
         // Listen for data from extension content script
@@ -55,25 +75,89 @@ export default function StudentExtension() {
     }, []);
 
     const calculateStats = (log: ActivityEntry[]) => {
-        const today = new Date().setHours(0, 0, 0, 0);
+        const todayStart = new Date().setHours(0, 0, 0, 0);
+
+        // 1. Today's Stats
         let learning = 0;
         let distraction = 0;
+        let mixed = 0;
 
         log.forEach(entry => {
-            if (entry.startTime >= today) {
+            if (entry.startTime >= todayStart) {
                 if (entry.category === 'Learning') learning += entry.duration;
                 if (entry.category === 'Distraction') distraction += entry.duration;
+                if (entry.category === 'Mixed') mixed += entry.duration;
             }
         });
 
-        const total = learning + distraction;
-        const score = total > 0 ? Math.round((learning / total) * 100) : 0;
+        const totalFocus = learning + distraction; // Mixed doesn't count against/for focus score?
+        // Or should score be Learning / (Learning + Distraction + Mixed)?
+        // User asked "mixed" to be categorized, likely neutral. Let's keep it out of the strict focus score for now.
+        const score = totalFocus > 0 ? Math.round((learning / totalFocus) * 100) : 0;
 
         setStats({
             learningTime: learning,
             distractionTime: distraction,
+            mixedTime: mixed,
             focusScore: score
         });
+
+        // 2. Weekly Data (Last 7 Days)
+        const days = 7;
+        const history: Record<string, { name: string, Learning: number, Distraction: number, Mixed: number }> = {};
+
+        // Initialize last 7 days
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const key = d.toDateString();
+            const name = d.toLocaleDateString('en-US', { weekday: 'short' });
+            history[key] = { name, Learning: 0, Distraction: 0, Mixed: 0 };
+        }
+
+        log.forEach(entry => {
+            const dateKey = new Date(entry.startTime).toDateString();
+            if (history[dateKey]) {
+                if (entry.category === 'Learning') {
+                    history[dateKey].Learning += (entry.duration / 60);
+                } else if (entry.category === 'Distraction') {
+                    history[dateKey].Distraction += (entry.duration / 60);
+                } else if (entry.category === 'Mixed') {
+                    history[dateKey].Mixed += (entry.duration / 60);
+                }
+            }
+        });
+
+        setWeeklyData(Object.values(history));
+
+        // 3. Top Sites (Last 7 Days)
+        const siteMap: Record<string, { duration: number, category: string }> = {};
+        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+
+        log.forEach(entry => {
+            if (entry.startTime >= sevenDaysAgo) {
+                if (!siteMap[entry.domain]) {
+                    siteMap[entry.domain] = { duration: 0, category: entry.category };
+                }
+                siteMap[entry.domain].duration += entry.duration;
+
+                // Prioritize specific categories over Neutral if mixed data occurs
+                if (entry.category !== 'Neutral' && entry.category !== 'Unknown') {
+                    // If existing is Neutral/Unknown, upgrade it
+                    if (siteMap[entry.domain].category === 'Neutral' || siteMap[entry.domain].category === 'Unknown') {
+                        siteMap[entry.domain].category = entry.category;
+                    }
+                    // If explicitly Diff, maybe default to Mixed? For now keep first non-neutral.
+                }
+            }
+        });
+
+        const sortedSites = Object.entries(siteMap)
+            .map(([domain, data]) => ({ domain, ...data }))
+            .sort((a, b) => b.duration - a.duration)
+            .slice(0, 10); // Top 10
+
+        setTopSites(sortedSites);
     };
 
     const formatDuration = (seconds: number) => {
@@ -117,7 +201,7 @@ export default function StudentExtension() {
                     </Alert>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Focus Score</CardTitle>
@@ -134,7 +218,7 @@ export default function StudentExtension() {
                             <Brain className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{isConnected ? formatDuration(stats.learningTime) : '--'}</div>
+                            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{isConnected ? formatDuration(stats.learningTime) : '--'}</div>
                             <p className="text-xs text-muted-foreground">Today's Total</p>
                         </CardContent>
                     </Card>
@@ -144,51 +228,142 @@ export default function StudentExtension() {
                             <AlertCircle className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{isConnected ? formatDuration(stats.distractionTime) : '--'}</div>
+                            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{isConnected ? formatDuration(stats.distractionTime) : '--'}</div>
                             <p className="text-xs text-muted-foreground">Today's Total</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">AI Coach</CardTitle>
-                            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium">Mixed Time</CardTitle>
+                            <Clock className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">Active</div>
-                            <p className="text-xs text-muted-foreground">Ready to chat</p>
+                            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{isConnected ? formatDuration(stats.mixedTime) : '--'}</div>
+                            <p className="text-xs text-muted-foreground">Today's Total</p>
                         </CardContent>
                     </Card>
                 </div>
 
+                {isConnected && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        {/* Weekly Chart */}
+                        <Card className="lg:col-span-2">
+                            <CardHeader>
+                                <CardTitle>Weekly Activity</CardTitle>
+                                <CardDescription>Your learning vs. distraction vs. mixed time (last 7 days).</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={weeklyData}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                            <XAxis dataKey="name" />
+                                            <YAxis unit="m" />
+                                            <Tooltip formatter={(value: number) => [`${Math.round(value)} mins`, 'Duration']} />
+                                            <Legend />
+                                            <Bar dataKey="Learning" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
+                                            <Bar dataKey="Mixed" stackId="a" fill="#eab308" radius={[0, 0, 0, 0]} />
+                                            <Bar dataKey="Distraction" stackId="a" fill="#ef4444" radius={[4, 4, 4, 4]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Top Sites */}
+                        <Card className="lg:col-span-1">
+                            <CardHeader>
+                                <CardTitle>Top Sites</CardTitle>
+                                <CardDescription>Your most visited domains this week.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ScrollArea className="h-[300px] pr-4">
+                                    <div className="space-y-4">
+                                        {topSites.map((site, index) => (
+                                            <div key={site.domain} className="flex items-center justify-between">
+                                                <div className="flex items-start gap-2">
+                                                    <div className="flex bg-muted h-9 w-9 items-center justify-center rounded-sm border shrink-0">
+                                                        <img
+                                                            src={`https://www.google.com/s2/favicons?domain=${site.domain}&sz=64`}
+                                                            alt=""
+                                                            className="h-5 w-5 opacity-80"
+                                                            onError={(e) => (e.currentTarget.src = "")} // Fallback if no favicon
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-medium leading-none truncate max-w-[120px]">{site.domain}</p>
+                                                        <p className="text-xs text-muted-foreground mt-1 capitalize">{site.category}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className={`text-sm font-semibold ${site.category === 'Learning' ? 'text-green-600' :
+                                                        site.category === 'Distraction' ? 'text-red-500' :
+                                                            site.category === 'Mixed' ? 'text-yellow-600' : 'text-foreground'
+                                                        }`}>
+                                                        {formatDuration(site.duration)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {topSites.length === 0 && (
+                                            <div className="text-center text-muted-foreground py-8">
+                                                Start browsing to see data here.
+                                            </div>
+                                        )}
+                                    </div>
+                                </ScrollArea>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+
                 <Card className="mb-8">
                     <CardHeader>
-                        <CardTitle>Installation Instructions</CardTitle>
-                        <CardDescription>Follow these steps to install the SkillHive Productivity Extension</CardDescription>
+                        <CardTitle>How this extension works?</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
-                            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold shrink-0">1</div>
-                            <div>
-                                <h3 className="font-semibold mb-1">Download and Extract</h3>
-                                <p className="text-sm text-muted-foreground">Click the download button above to get the extension files. Extract the zip file to a folder on your computer.</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
-                            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold shrink-0">2</div>
-                            <div>
-                                <h3 className="font-semibold mb-1">Open Extensions Management</h3>
-                                <p className="text-sm text-muted-foreground">Open Chrome/Edge and go to <code className="bg-muted px-1 rounded">chrome://extensions</code>. Enable "Developer mode" in the top right.</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
-                            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold shrink-0">3</div>
-                            <div>
-                                <h3 className="font-semibold mb-1">Load Unpacked</h3>
-                                <p className="text-sm text-muted-foreground">Click "Load unpacked" and select the folder where you extracted the extension files.</p>
-                            </div>
-                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            This extension helps you stay focused by tracking your browser usage.
+                        </p>
+                        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                            <li><strong>Smart Tracking:</strong> It automatically categorizes websites into <strong>Learning</strong> (e.g., tutorials, courses), <strong>Distraction</strong> (e.g., social media), and <strong>Mixed</strong> (e.g., general YouTube).</li>
+                            <li><strong>Distraction Alerts:</strong> You can set a time limit for distractions. If you exceed this limit, the extension will show you an alert to remind you to get back to work.</li>
+                            <li><strong>Privacy First:</strong> Your browsing history is analyzed locally on your device.</li>
+                        </ul>
                     </CardContent>
                 </Card>
+
+                {!isConnected && (
+                    <Card className="mb-8">
+                        <CardHeader>
+                            <CardTitle>Installation Instructions</CardTitle>
+                            <CardDescription>Follow these steps to install the SkillHive Productivity Extension</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold shrink-0">1</div>
+                                <div>
+                                    <h3 className="font-semibold mb-1">Download and Extract</h3>
+                                    <p className="text-sm text-muted-foreground">Click the download button above to get the extension files. Extract the zip file to a folder on your computer.</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold shrink-0">2</div>
+                                <div>
+                                    <h3 className="font-semibold mb-1">Open Extensions Management</h3>
+                                    <p className="text-sm text-muted-foreground">Open Chrome/Edge and go to <code className="bg-muted px-1 rounded">chrome://extensions</code>. Enable "Developer mode" in the top right.</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold shrink-0">3</div>
+                                <div>
+                                    <h3 className="font-semibold mb-1">Load Unpacked</h3>
+                                    <p className="text-sm text-muted-foreground">Click "Load unpacked" and select the folder where you extracted the extension files.</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
             </main>
         </div>
     );

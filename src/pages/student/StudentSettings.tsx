@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { StudentNavbar } from '@/components/StudentNavbar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStudentSettings } from '@/hooks/useStudentSettings';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Card,
   CardContent,
@@ -49,47 +51,15 @@ const notificationKeys = [
 export default function StudentSettings() {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { settings, updateSection, resetSettings } = useStudentSettings();
+
+  // Account state
   const [account, setAccount] = useState({
-    email: user?.email ?? 'student@example.com',
-    phone: '+1 (555) 123-4567',
+    email: user?.email ?? '',
+    phone: '',
+    countryCode: '+91',
     password: '',
-    linkedGoogle: true,
-  });
-
-  const [notifications, setNotifications] = useState<Record<(typeof notificationKeys)[number], boolean>>({
-    studyReminders: true,
-    quizAlerts: true,
-    fatigueAlerts: false,
-    jobRecs: true,
-    newVideos: true,
-    chatbotUpdates: true,
-    systemAnnouncements: true,
-  });
-
-  const [privacy, setPrivacy] = useState({
-    twoStep: true,
-    visibility: 'mentor',
-    downloadData: '',
-  });
-
-  const [theme, setTheme] = useState({
-    mode: 'system',
-    accent: 'blue',
-    animations: true,
-  });
-
-  const [learning, setLearning] = useState({
-    format: 'videos',
-    difficulty: 'normal',
-    dailyTime: '2h',
-    quizMode: 'adaptive',
-    aiExplain: 'detailed',
-  });
-
-  const [chatbot, setChatbot] = useState({
-    enabled: true,
-    useLearningData: true,
-    tone: 'teacher',
+    confirmPassword: '',
   });
 
   /* Extension Settings State */
@@ -105,7 +75,6 @@ export default function StudentSettings() {
       if (event.source !== window) return;
 
       if (event.data.type === 'SKILLHIVE_EXTENSION_DATA') {
-        console.log('Settings: Extension Detected');
         setExtensionDetected(true);
       }
     };
@@ -141,39 +110,66 @@ export default function StudentSettings() {
     });
   };
 
-  const [jobs, setJobs] = useState({
-    locations: 'Global / Remote first',
-    roles: 'ML Engineer, Data Scientist',
-    preference: 'Full-time',
-    salary: '₹12L - ₹20L',
-    workType: 'Hybrid',
-  });
+  const handleAccountSave = async () => {
+    try {
+      let updated = false;
 
-  const handleAccountSave = () => {
-    toast({
-      title: 'Account updated',
-      description: 'Credentials refreshed successfully.',
-    });
+      // 1. Password Update
+      if (account.password) {
+        if (account.password.length < 6) {
+          toast({
+            title: 'Error',
+            description: 'Password must be at least 6 characters.',
+            variant: "destructive"
+          });
+          return;
+        }
+
+        if (account.password !== account.confirmPassword) {
+          toast({
+            title: 'Error',
+            description: 'Passwords do not match.',
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const { error } = await supabase.auth.updateUser({ password: account.password });
+        if (error) throw error;
+        updated = true;
+        setAccount(prev => ({ ...prev, password: '', confirmPassword: '' })); // Clear on success
+      }
+
+      // 2. Phone Update (Local / Future DB)
+      if (updated || account.phone) {
+        toast({
+          title: 'Account updated',
+          description: updated ? 'Password changed successfully.' : 'Profile details saved locally.',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Update failed',
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleNotificationToggle = (key: (typeof notificationKeys)[number]) => {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
+    updateSection('notifications', { [key]: !settings.notifications[key] });
   };
 
-  const handleThemeChange = (key: keyof typeof theme, value: string | boolean) => {
-    setTheme((prev) => ({ ...prev, [key]: value }));
+  const handleLearningChange = (key: keyof typeof settings.learning, value: string) => {
+    updateSection('learning', { [key]: value });
   };
 
-  const handleLearningChange = (key: keyof typeof learning, value: string) => {
-    setLearning((prev) => ({ ...prev, [key]: value }));
+  const handleChatbotChange = (key: keyof typeof settings.chatbot, value: string | boolean) => {
+    updateSection('chatbot', { [key]: value });
   };
 
-  const handleChatbotChange = (key: keyof typeof chatbot, value: string | boolean) => {
-    setChatbot((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleJobsChange = (key: keyof typeof jobs, value: string) => {
-    setJobs((prev) => ({ ...prev, [key]: value }));
+  const handleJobsChange = (key: keyof typeof settings.jobs, value: string) => {
+    updateSection('jobs', { [key]: value });
   };
 
   return (
@@ -181,39 +177,69 @@ export default function StudentSettings() {
       <StudentNavbar />
       <main className="container mx-auto px-4 py-8 space-y-8">
         <header className="space-y-2">
-          <p className="text-sm uppercase tracking-wide text-muted-foreground">⚙️ Settings Control Room</p>
-          <h1 className="text-3xl font-semibold text-foreground">Fine-tune your adaptive learning experience</h1>
-          <p className="text-muted-foreground">
-            Manage privacy, notifications, UI preferences, learning modes, chatbot behavior, and job recommendations from one place.
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm uppercase tracking-wide text-muted-foreground">⚙️ Settings Control Room</p>
+              <h1 className="text-3xl font-semibold text-foreground">Fine-tune your adaptive learning experience</h1>
+              <p className="text-muted-foreground">
+                Manage privacy, notifications, learning modes, chatbot behavior, and job recommendations.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => {
+              if (confirm("Reset all local settings to default?")) resetSettings();
+            }}>Reset Defaults</Button>
+          </div>
         </header>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Account Settings</CardTitle>
-              <CardDescription>Identity, credentials, and linked accounts</CardDescription>
+              <CardDescription>Identity and credentials</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Email address</Label>
-                <Input value={account.email} onChange={(e) => setAccount({ ...account, email: e.target.value })} />
+                <Input value={account.email} readOnly className="bg-muted" />
               </div>
               <div className="space-y-2">
                 <Label>Phone number</Label>
-                <Input value={account.phone} onChange={(e) => setAccount({ ...account, phone: e.target.value })} />
+                <div className="flex gap-2">
+                  <Select
+                    value={account.countryCode}
+                    onValueChange={(val) => setAccount({ ...account, countryCode: val })}
+                  >
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Code" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                      <SelectItem value="+44">🇬🇧 +44</SelectItem>
+                      <SelectItem value="+91">🇮🇳 +91</SelectItem>
+                      <SelectItem value="+61">🇦🇺 +61</SelectItem>
+                      <SelectItem value="+81">🇯🇵 +81</SelectItem>
+                      <SelectItem value="+49">🇩🇪 +49</SelectItem>
+                      <SelectItem value="+33">🇫🇷 +33</SelectItem>
+                      <SelectItem value="+86">🇨🇳 +86</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    className="flex-1"
+                    value={account.phone}
+                    placeholder=""
+                    onChange={(e) => setAccount({ ...account, phone: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Update password</Label>
                 <Input type="password" placeholder="New password" value={account.password} onChange={(e) => setAccount({ ...account, password: e.target.value })} />
               </div>
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <p className="text-sm font-medium">Linked Google account</p>
-                  <p className="text-xs text-muted-foreground">{account.linkedGoogle ? 'Connected via OAuth' : 'Not connected'}</p>
-                </div>
-                <Switch checked={account.linkedGoogle} onCheckedChange={(checked) => setAccount({ ...account, linkedGoogle: checked })} />
+              <div className="space-y-2">
+                <Label>Confirm password</Label>
+                <Input type="password" placeholder="Re-enter new password" value={account.confirmPassword} onChange={(e) => setAccount({ ...account, confirmPassword: e.target.value })} />
               </div>
+
               <div className="flex flex-wrap gap-3">
                 <Button onClick={handleAccountSave}>Save account</Button>
                 <AlertDialog>
@@ -259,7 +285,10 @@ export default function StudentSettings() {
                       {key === 'systemAnnouncements' && 'Platform notices & planned downtime'}
                     </p>
                   </div>
-                  <Switch checked={notifications[key]} onCheckedChange={() => handleNotificationToggle(key)} />
+                  <Switch
+                    checked={settings.notifications[key]}
+                    onCheckedChange={(checked) => handleNotificationToggle(key)}
+                  />
                 </div>
               ))}
             </CardContent>
@@ -278,11 +307,17 @@ export default function StudentSettings() {
                   <p className="text-sm font-medium">Two-step login</p>
                   <p className="text-xs text-muted-foreground">Adds OTP verification for every login</p>
                 </div>
-                <Switch checked={privacy.twoStep} onCheckedChange={(checked) => setPrivacy({ ...privacy, twoStep: checked })} />
+                <Switch
+                  checked={settings.privacy.twoStep}
+                  onCheckedChange={(checked) => updateSection('privacy', { twoStep: checked })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Profile visibility</Label>
-                <Select value={privacy.visibility} onValueChange={(value) => setPrivacy({ ...privacy, visibility: value })}>
+                <Select
+                  value={settings.privacy.visibility}
+                  onValueChange={(value: any) => updateSection('privacy', { visibility: value })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Who can view?" />
                   </SelectTrigger>
@@ -295,7 +330,7 @@ export default function StudentSettings() {
               </div>
               <div className="space-y-2">
                 <Label>Download profile data</Label>
-                <Textarea rows={2} placeholder="Optional note for export request" value={privacy.downloadData} onChange={(e) => setPrivacy({ ...privacy, downloadData: e.target.value })} />
+                <Textarea rows={2} placeholder="Optional note for export request" />
                 <Button variant="outline" size="sm">
                   Generate export
                 </Button>
@@ -309,57 +344,16 @@ export default function StudentSettings() {
 
           <Card>
             <CardHeader>
-              <CardTitle>UI & Theme</CardTitle>
-              <CardDescription>Match the platform vibe to your focus state</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Mode</Label>
-                <Select value={theme.mode} onValueChange={(value) => handleThemeChange('mode', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="system">System auto</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Accent color</Label>
-                <Select value={theme.accent} onValueChange={(value) => handleThemeChange('accent', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select accent" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="blue">Blue</SelectItem>
-                    <SelectItem value="green">Green</SelectItem>
-                    <SelectItem value="purple">Purple</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <p className="text-sm font-medium">Enable micro-animations</p>
-                  <p className="text-xs text-muted-foreground">Smooth transitions + focus cues</p>
-                </div>
-                <Switch checked={theme.animations} onCheckedChange={(checked) => handleThemeChange('animations', checked)} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
               <CardTitle>Learning Preferences</CardTitle>
               <CardDescription>Tell the platform how you like to learn</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Preferred format</Label>
-                <Select value={learning.format} onValueChange={(value) => handleLearningChange('format', value)}>
+                <Select
+                  value={settings.learning.format}
+                  onValueChange={(value: any) => handleLearningChange('format', value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select format" />
                   </SelectTrigger>
@@ -372,7 +366,10 @@ export default function StudentSettings() {
               </div>
               <div className="space-y-2">
                 <Label>Difficulty preference</Label>
-                <Select value={learning.difficulty} onValueChange={(value) => handleLearningChange('difficulty', value)}>
+                <Select
+                  value={settings.learning.difficulty}
+                  onValueChange={(value: any) => handleLearningChange('difficulty', value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select difficulty" />
                   </SelectTrigger>
@@ -384,11 +381,17 @@ export default function StudentSettings() {
               </div>
               <div className="space-y-2">
                 <Label>Daily study target</Label>
-                <Input value={learning.dailyTime} onChange={(e) => handleLearningChange('dailyTime', e.target.value)} />
+                <Input
+                  value={settings.learning.dailyTime}
+                  onChange={(e) => handleLearningChange('dailyTime', e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Quiz mode</Label>
-                <Select value={learning.quizMode} onValueChange={(value) => handleLearningChange('quizMode', value)}>
+                <Select
+                  value={settings.learning.quizMode}
+                  onValueChange={(value: any) => handleLearningChange('quizMode', value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select mode" />
                   </SelectTrigger>
@@ -401,7 +404,10 @@ export default function StudentSettings() {
               </div>
               <div className="space-y-2">
                 <Label>AI explanations</Label>
-                <Select value={learning.aiExplain} onValueChange={(value) => handleLearningChange('aiExplain', value)}>
+                <Select
+                  value={settings.learning.aiExplain}
+                  onValueChange={(value: any) => handleLearningChange('aiExplain', value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Choose style" />
                   </SelectTrigger>
@@ -413,7 +419,9 @@ export default function StudentSettings() {
               </div>
             </CardContent>
           </Card>
+        </div>
 
+        <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Chatbot & Job Preferences</CardTitle>
@@ -425,18 +433,27 @@ export default function StudentSettings() {
                   <p className="text-sm font-medium">Enable chatbot</p>
                   <p className="text-xs text-muted-foreground">Toggles conversational helper</p>
                 </div>
-                <Switch checked={chatbot.enabled} onCheckedChange={(checked) => handleChatbotChange('enabled', checked)} />
+                <Switch
+                  checked={settings.chatbot.enabled}
+                  onCheckedChange={(checked) => handleChatbotChange('enabled', checked)}
+                />
               </div>
               <div className="flex items-center justify-between rounded-lg border p-3">
                 <div>
                   <p className="text-sm font-medium">Allow learning data</p>
                   <p className="text-xs text-muted-foreground">Lets chatbot personalize answers</p>
                 </div>
-                <Switch checked={chatbot.useLearningData} onCheckedChange={(checked) => handleChatbotChange('useLearningData', checked)} />
+                <Switch
+                  checked={settings.chatbot.useLearningData}
+                  onCheckedChange={(checked) => handleChatbotChange('useLearningData', checked)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Chatbot tone</Label>
-                <Select value={chatbot.tone} onValueChange={(value) => handleChatbotChange('tone', value)}>
+                <Select
+                  value={settings.chatbot.tone}
+                  onValueChange={(value: any) => handleChatbotChange('tone', value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select tone" />
                   </SelectTrigger>
@@ -450,16 +467,25 @@ export default function StudentSettings() {
               <Separator />
               <div className="space-y-2">
                 <Label>Preferred job locations</Label>
-                <Input value={jobs.locations} onChange={(e) => handleJobsChange('locations', e.target.value)} />
+                <Input
+                  value={settings.jobs.locations}
+                  onChange={(e) => handleJobsChange('locations', e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Preferred roles</Label>
-                <Input value={jobs.roles} onChange={(e) => handleJobsChange('roles', e.target.value)} />
+                <Input
+                  value={settings.jobs.roles}
+                  onChange={(e) => handleJobsChange('roles', e.target.value)}
+                />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Internship / Full-time</Label>
-                  <Select value={jobs.preference} onValueChange={(value) => handleJobsChange('preference', value)}>
+                  <Select
+                    value={settings.jobs.preference}
+                    onValueChange={(value: any) => handleJobsChange('preference', value)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select preference" />
                     </SelectTrigger>
@@ -472,12 +498,18 @@ export default function StudentSettings() {
                 </div>
                 <div className="space-y-2">
                   <Label>Salary range</Label>
-                  <Input value={jobs.salary} onChange={(e) => handleJobsChange('salary', e.target.value)} />
+                  <Input
+                    value={settings.jobs.salary}
+                    onChange={(e) => handleJobsChange('salary', e.target.value)}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Work type</Label>
-                <Select value={jobs.workType} onValueChange={(value) => handleJobsChange('workType', value)}>
+                <Select
+                  value={settings.jobs.workType}
+                  onValueChange={(value: any) => handleJobsChange('workType', value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>

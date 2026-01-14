@@ -1,4 +1,4 @@
-export type NoteCategory = 'college' | 'competitive' | 'personal';
+export type NoteCategory = 'college' | 'competitive' | 'personal' | 'video_note';
 export type NoteStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface NoteSource {
@@ -40,6 +40,8 @@ export interface StudyNote {
   semester?: number;
   subject: string;
   topics: string[];
+  videoUrl?: string;
+  videoId?: string;
   summary: string;
   content: NoteSection[];
   flashcards: Flashcard[];

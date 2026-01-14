@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { subjectData, type StreamData, type Subject } from '@/data/subjects';
 import { searchYouTubeVideos, getEmbedUrl, getVideosFromChannel, type YouTubeVideo } from '@/services/youtube';
 import { recordActivity } from '@/services/activityTracker';
-import { Loader2, Play, ArrowLeft, BookOpen } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, Play, ArrowLeft, BookOpen, Search, Info, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 type ViewState = 'stream' | 'year' | 'semester' | 'subject' | 'videos';
@@ -21,6 +22,9 @@ export default function StudentLearning() {
   const [loading, setLoading] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<YouTubeVideo | null>(null);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<YouTubeVideo[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const streamData = selectedStream ? subjectData[selectedStream] : null;
   const yearData = streamData && selectedYear
@@ -144,6 +148,96 @@ export default function StudentLearning() {
       setSelectedStream(null);
     }
   };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    try {
+      const results = await searchYouTubeVideos(searchQuery + ' engineering tutorial', 12);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const renderSearchSection = () => (
+    <div className="space-y-6 mt-12 pt-8 border-t">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Explore Learning Videos</h2>
+        <p className="text-muted-foreground">Search for specific topics, tutorials, or lectures</p>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
+        <form onSubmit={handleSearch} className="flex gap-2 w-full flex-1">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search for topics (e.g., 'Thermodynamics', 'Calculus')..."
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button type="submit" disabled={isSearching}>
+            {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search'}
+          </Button>
+          {(searchQuery || searchResults.length > 0) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                setSearchQuery('');
+                setSearchResults([]);
+              }}
+              title="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </form>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-3 py-2 rounded-md border max-w-sm">
+          <Info className="h-4 w-4 flex-shrink-0 text-primary" />
+          <p>
+            Smart Filter: We strictly show only educational videos, even if you search for unrelated topics.
+          </p>
+        </div>
+      </div>
+
+      {searchResults.length > 0 && (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+          {searchResults.map((video) => (
+            <Card key={video.id.videoId} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="relative aspect-video bg-muted cursor-pointer group" onClick={() => handleVideoClick(video)}>
+                <img
+                  src={video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium.url}
+                  alt={video.snippet.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Play className="h-12 w-12 text-white" />
+                </div>
+              </div>
+              <CardHeader className="p-4">
+                <CardTitle className="text-sm line-clamp-2 hover:text-primary transition-colors">
+                  {video.snippet.title}
+                </CardTitle>
+                <CardDescription className="text-xs mt-1">
+                  {video.snippet.channelTitle}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   const renderStreamSelection = () => (
     <div className="space-y-6">
@@ -380,7 +474,12 @@ export default function StudentLearning() {
         )}
 
         {/* Content based on current view */}
-        {currentView === 'stream' && renderStreamSelection()}
+        {currentView === 'stream' && (
+          <>
+            {renderStreamSelection()}
+            {renderSearchSection()}
+          </>
+        )}
         {currentView === 'year' && renderYearSelection()}
         {currentView === 'semester' && renderSemesterSelection()}
         {currentView === 'subject' && renderSubjectSelection()}

@@ -289,13 +289,79 @@ export interface WeakArea {
   correctAttempts: number;
 }
 
+// Get recent weak areas (prioritizing latest quizzes)
+export function getRecentWeakAreas(limit: number = 5): WeakArea[] {
+  const results = getQuizResults().sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+  const seenTopics = new Set<string>();
+  const weakAreas: WeakArea[] = [];
+
+  for (const result of results) {
+    if (weakAreas.length >= limit) break;
+
+    Object.entries(result.topicStats).forEach(([topic, stats]) => {
+      const normalizedTopic = topic.trim().toLowerCase();
+      // Use "Subject::Topic" key to ensure uniqueness across subjects
+      const key = `${result.subject.trim()}::${normalizedTopic}`;
+
+      if (seenTopics.has(key)) return;
+      seenTopics.add(key);
+
+      const accuracy = stats.total > 0 ? (stats.correct / stats.total) * 100 : 0;
+      if (accuracy < 60) {
+        weakAreas.push({
+          topic: topic.trim(),
+          subject: result.subject.trim(),
+          accuracy,
+          averageTime: stats.avgTime || 0,
+          totalAttempts: stats.total,
+          correctAttempts: stats.correct,
+        });
+      }
+    });
+  }
+
+  // If we don't have enough recent ones, we could fallback to aggregate, but for now strict recency is better for "prioritise latest"
+  return weakAreas.slice(0, limit);
+}
+
+// Get recent strong areas (prioritizing latest quizzes)
+export function getRecentStrongAreas(limit: number = 5): StrongArea[] {
+  const results = getQuizResults().sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+  const seenTopics = new Set<string>();
+  const strongAreas: StrongArea[] = [];
+
+  for (const result of results) {
+    if (strongAreas.length >= limit) break;
+
+    Object.entries(result.topicStats).forEach(([topic, stats]) => {
+      const normalizedTopic = topic.trim().toLowerCase();
+      const key = `${result.subject.trim()}::${normalizedTopic}`;
+
+      if (seenTopics.has(key)) return;
+      seenTopics.add(key);
+
+      const accuracy = stats.total > 0 ? (stats.correct / stats.total) * 100 : 0;
+      if (accuracy >= 80) {
+        strongAreas.push({
+          topic: topic.trim(),
+          subject: result.subject.trim(),
+          accuracy,
+          averageTime: stats.avgTime || 0,
+          totalAttempts: stats.total,
+        });
+      }
+    });
+  }
+
+  return strongAreas.slice(0, limit);
+}
+
 export function getWeakAreas(): WeakArea[] {
   return getTopicPerformances()
     .filter(area => area.accuracy < 60 && area.totalAttempts >= 1) // At least 1 attempt
     .sort((a, b) => a.accuracy - b.accuracy);
 }
 
-// Get strong areas (topics with >80% accuracy)
 export interface StrongArea {
   topic: string;
   subject: string;
@@ -407,5 +473,16 @@ export function getSkillRadarData(): SkillRadarData {
     difficultyHandling: Math.round(difficultyHandling),
     stability: Math.round(stability),
   };
+}
+
+// Helper to group topics by subject
+export function groupTopicsBySubject<T extends { subject: string }>(items: T[]): Record<string, T[]> {
+  return items.reduce((acc, item) => {
+    if (!acc[item.subject]) {
+      acc[item.subject] = [];
+    }
+    acc[item.subject].push(item);
+    return acc;
+  }, {} as Record<string, T[]>);
 }
 

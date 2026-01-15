@@ -4,6 +4,8 @@ import {
   getQuizResults,
   getWeakAreas,
   getStrongAreas,
+  getRecentWeakAreas,
+  getRecentStrongAreas,
   getPerformanceMetrics,
   getSubjectPerformance,
   type WeakArea,
@@ -46,7 +48,8 @@ export interface AdaptiveLearningInsights {
 export function analyzeLearnerPerformance(): AdaptiveLearningInsights {
   const results = getQuizResults();
   const metrics = getPerformanceMetrics();
-  const weakAreas = getWeakAreas();
+  // Use recent weak areas (top 5 prioritized by latest quiz)
+  const weakAreas = getRecentWeakAreas(5);
   const subjectPerformance = getSubjectPerformance();
 
   // If no quiz data, return default recommendations
@@ -62,12 +65,11 @@ export function analyzeLearnerPerformance(): AdaptiveLearningInsights {
 
   // Identify focus areas (weak topics that need attention)
   const focusAreas = weakAreas
-    .slice(0, 5)
     .map(area => `${area.topic} (${area.subject})`);
 
   // Identify strengths (topics with >80% accuracy)
-  const strengths = getStrongAreas()
-    .slice(0, 5)
+  // Use recent strong areas (top 5 prioritized by latest quiz)
+  const strengths = getRecentStrongAreas(5)
     .map(area => `${area.topic} (${area.subject})`);
 
   // Generate study plan
@@ -260,10 +262,11 @@ export async function getRecommendedVideos(
 ): Promise<Map<string, YouTubeVideo[]>> {
   const videoMap = new Map<string, YouTubeVideo[]>();
 
-  // Get videos for top weak areas (prioritize by accuracy - lowest first)
+  // Get videos for top weak areas
+  // CRITICAL: Do NOT sort by accuracy. Preserve the order passed in (which is by recency from getRecentWeakAreas)
+  // This fulfills the requirement: "prioritise the latest quiz taken"
   const topWeakAreas = weakAreas
-    .sort((a, b) => a.accuracy - b.accuracy) // Sort by accuracy (lowest first)
-    .slice(0, Math.min(5, weakAreas.length)); // Get top 5 weakest areas
+    .slice(0, Math.min(5, weakAreas.length)); // Get top 5 weakest areas (already prioritized by recency)
 
   console.log(`[Recommendations] Fetching videos for ${topWeakAreas.length} weak areas using queue...`);
 

@@ -16,7 +16,16 @@ import {
   getSubjectRecommendedVideos,
   type AdaptiveLearningInsights
 } from '@/services/personalizedRecommendations';
-import { getWeakAreas, getSubjectPerformance, getQuizResults } from '@/services/quizResults';
+import {
+  getWeakAreas,
+  getSubjectPerformance,
+  getQuizResults,
+  getRecentWeakAreas,
+  getRecentStrongAreas,
+  groupTopicsBySubject,
+  type WeakArea,
+  type StrongArea
+} from '@/services/quizResults';
 import { type YouTubeVideo } from '@/services/youtube';
 import { youtubeQueue } from '@/services/youtubeQueue';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +56,16 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { GoalList } from '@/components/dashboard/GoalList';
 import { LearningProgress } from '@/components/dashboard/LearningProgress';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Info } from 'lucide-react';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -64,7 +83,10 @@ export default function StudentDashboard() {
   const [isAddingGoal, setIsAddingGoal] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [videosExpanded, setVideosExpanded] = useState(false);
-
+  const [showAllStrengths, setShowAllStrengths] = useState(false);
+  const [showAllWeaknesses, setShowAllWeaknesses] = useState(false);
+  const [allStrengths, setAllStrengths] = useState<Record<string, StrongArea[]>>({});
+  const [allWeaknesses, setAllWeaknesses] = useState<Record<string, WeakArea[]>>({});
   useEffect(() => {
     // Load user profile to get name
     const loadUserProfile = async () => {
@@ -191,12 +213,19 @@ export default function StudentDashboard() {
     const adaptiveInsights = analyzeLearnerPerformance();
     setInsights(adaptiveInsights);
 
+    // Load detailed stats for "All Topics" view
+    const allStrengthsData = getRecentStrongAreas(100);
+    const allWeaknessesData = getRecentWeakAreas(100);
+    setAllStrengths(groupTopicsBySubject(allStrengthsData));
+    setAllWeaknesses(groupTopicsBySubject(allWeaknessesData));
+
     setLoadingVideos(true);
     setVideoQueueStatus('Fetching recommended videos...');
 
     try {
       // Load recommended videos for weak areas (one API call at a time via queue)
-      const weakAreas = getWeakAreas();
+      // Use getRecentWeakAreas to prioritize latest quizzes for videos too, as requested
+      const weakAreas = getRecentWeakAreas(5);
       if (weakAreas.length > 0) {
         setVideoQueueStatus(`Loading videos for ${weakAreas.length} weak areas...`);
         const videoMap = await getRecommendedVideos(weakAreas, 6);
@@ -307,18 +336,59 @@ export default function StudentDashboard() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <h2 className="text-2xl font-bold tracking-tight">Personalized Recommendations</h2>
-                    <p className="text-sm text-muted-foreground">Tailored based on your recent performance</p>
+                    <p className="text-sm text-muted-foreground">
+                      Data is shown based on the latest quizzes taken and the top 5 data is shown.
+                    </p>
                   </div>
                 </div>
+
+
+
 
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Strong Topics */}
                   <Card className="border-none shadow-sm bg-gradient-to-br from-green-50/50 to-transparent dark:from-green-950/10">
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
                       <CardTitle className="text-base flex items-center gap-2 text-green-700 dark:text-green-400">
                         <Award className="h-4 w-4" />
                         Your Strengths
                       </CardTitle>
+                      <Dialog open={showAllStrengths} onOpenChange={setShowAllStrengths}>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-green-700/50 hover:text-green-700 hover:bg-green-100/50">
+                            <Info className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>All Strengths</DialogTitle>
+                            <DialogDescription>
+                              Topics where you have achieved &gt;80% accuracy.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <ScrollArea className="h-[60vh] pr-4">
+                            <div className="space-y-6">
+                              {Object.entries(allStrengths).length > 0 ? (
+                                Object.entries(allStrengths).map(([subject, areas]) => (
+                                  <div key={subject} className="space-y-2">
+                                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">{subject}</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                      {areas.map(area => (
+                                        <Badge key={area.topic} variant="secondary" className="bg-green-500/10 text-green-700 dark:text-green-400 border-none">
+                                          {area.topic}
+                                          <span className="ml-1 opacity-60 text-[10px]">{Math.round(area.accuracy)}%</span>
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-center text-muted-foreground py-8">No strengths recorded yet.</p>
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </DialogContent>
+                      </Dialog>
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
@@ -337,11 +407,47 @@ export default function StudentDashboard() {
 
                   {/* Weak Topics */}
                   <Card className="border-none shadow-sm bg-gradient-to-br from-red-50/50 to-transparent dark:from-red-950/10">
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
                       <CardTitle className="text-base flex items-center gap-2 text-red-700 dark:text-red-400">
                         <AlertCircle className="h-4 w-4" />
                         Areas for Improvement
                       </CardTitle>
+                      <Dialog open={showAllWeaknesses} onOpenChange={setShowAllWeaknesses}>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-red-700/50 hover:text-red-700 hover:bg-red-100/50">
+                            <Info className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Areas for Improvement</DialogTitle>
+                            <DialogDescription>
+                              Topics where accuracy is &lt;60%.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <ScrollArea className="h-[60vh] pr-4">
+                            <div className="space-y-6">
+                              {Object.entries(allWeaknesses).length > 0 ? (
+                                Object.entries(allWeaknesses).map(([subject, areas]) => (
+                                  <div key={subject} className="space-y-2">
+                                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">{subject}</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                      {areas.map(area => (
+                                        <Badge key={area.topic} variant="secondary" className="bg-red-500/10 text-red-700 dark:text-red-400 border-none">
+                                          {area.topic}
+                                          <span className="ml-1 opacity-60 text-[10px]">{Math.round(area.accuracy)}%</span>
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-center text-muted-foreground py-8">No weak areas identified!</p>
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </DialogContent>
+                      </Dialog>
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">

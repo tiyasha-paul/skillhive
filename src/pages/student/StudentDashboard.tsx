@@ -264,9 +264,9 @@ export default function StudentDashboard() {
     const quizResults = getQuizResults();
     const activities = getTotalActivityCount();
     const xp = quizResults.length * 50 + activities * 10; // 50 XP per quiz, 10 XP per activity
-    const currentLevel = Math.floor(xp / 350); // Level up every 350 XP
-    const xpInLevel = xp % 350;
-    const xpNeeded = 350 - xpInLevel;
+    const currentLevel = Math.floor(xp / 300); // Level up every 300 XP
+    const xpInLevel = xp % 300;
+    const xpNeeded = 300 - xpInLevel;
     return { xp, currentLevel, xpInLevel, xpNeeded };
   }, [refreshTrigger]); // Recalculate when activities/quizzes update
 

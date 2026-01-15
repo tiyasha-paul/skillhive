@@ -232,6 +232,58 @@ export function getSemestersForYear(year: string): string[] {
   });
 }
 
+// Helper to repair common broken LaTeX commands where backslashes might be missing
+function repairMathString(str: string): string {
+  if (!str) return str;
+  // Only repair inside $...$ delimiters to avoid breaking normal text
+  return str.replace(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g, (match) => {
+    let fixed = match;
+
+    // List of common LaTeX commands to check and fix
+    // We look for " word" or "{word" or "word " that should be "\word"
+    // The regex ensures we don't double-add backslashes if they somehow exist (though this function assumes they are missing)
+    // We match word boundaries to avoid replacing "pint" -> "p\int" etc.
+    const commands = [
+      'frac', 'sqrt', 'sum', 'prod', 'int', 'oint', 'partial', 'nabla', 'infty',
+      'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'pi', 'rho', 'sigma', 'tau', 'upslon', 'phi', 'chi', 'psi', 'omega',
+      'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'log', 'ln', 'lim',
+      'mathbf', 'mathcal', 'mathrm', 'textit', 'textbf',
+      'cdot', 'times', 'div', 'pm', 'mp',
+      'approx', 'equiv', 'neq', 'leq', 'geq', 'to', 'rightarrow', 'leftarrow',
+      'vec', 'hat', 'bar'
+    ];
+
+    commands.forEach(cmd => {
+      // Look for the command strictly as a word, NOT preceded by a backslash
+      // We use a negative lookbehind (or simulated one) to ensure no backslash
+      // But JS support varies. Safer: Replace "cmd" with "\cmd" if it's not "\cmd".
+      // Simple approach: Match word boundary.
+      const regex = new RegExp(`(?<!\\\\)\\b${cmd}\\b`, 'g');
+      fixed = fixed.replace(regex, `\\${cmd}`);
+    });
+
+    return fixed;
+  });
+}
+
+function repairQuizData(data: QuizPackage): QuizPackage {
+  if (!data || !data.questions) return data;
+
+  data.questions = data.questions.map(q => ({
+    ...q,
+    question: repairMathString(q.question),
+    options: {
+      A: repairMathString(q.options.A),
+      B: repairMathString(q.options.B),
+      C: repairMathString(q.options.C),
+      D: repairMathString(q.options.D),
+    },
+    // explanation might also have math
+    explanation: repairMathString(q.explanation || '')
+  }));
+  return data;
+}
+
 export async function generateQuiz(branch: string, semester: string, subject: string): Promise<QuizPackage> {
   const prompt = `You are an expert academic content generator for B.Tech Engineering students under the Indian MAKAUT-style curriculum.
 
@@ -275,7 +327,7 @@ STRICT RULES (FOLLOW EVERY POINT CAREFULLY)
    - Questions must be ORIGINAL (do not copy online sources).  
    - They must test **conceptual understanding**, not just memory.
    - **Enclose ALL mathematical expressions, symbols, and equations in single dollar signs ($) for inline math or double dollar signs ($$) for block math.** Example: 'Here is $\\\\nabla \\\\times \\\\mathbf{E}$'.
-   - **CRITICAL FOR JSON:** You MUST escape all backslashes in your LaTeX commands. For example, use '\\\\nabla' instead of '\\nabla', and '\\\\approx' instead of '\\approx'. If you do not escape them, the JSON will be invalid.
+   - **CRITICAL FOR JSON:** You MUST escape all backslashes in your LaTeX commands. For example, use '\\\\nabla' instead of '\\nabla', and '\\\\approx' instead of '\\\\approx'. If you do not escape them, the JSON will be invalid.
 
 6. VERY IMPORTANT:  
    Output MUST be **valid JSON ONLY** — no commentary, no notes, no markdown, no code blocks.
@@ -329,39 +381,58 @@ STRICT RULES (FOLLOW EVERY POINT CAREFULLY)
   try {
     const response = await generateGeminiText(prompt);
 
-    // Clean the response - remove markdown code blocks if present
+    // Clean the response logic
     let cleanedResponse = response.trim();
 
-    // Remove markdown code blocks
-    if (cleanedResponse.includes('```json')) {
-      const jsonMatch = cleanedResponse.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch) {
-        cleanedResponse = jsonMatch[1].trim();
-      } else {
-        cleanedResponse = cleanedResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-      }
-    } else if (cleanedResponse.includes('```')) {
-      const codeMatch = cleanedResponse.match(/```\s*([\s\S]*?)\s*```/);
-      if (codeMatch) {
-        cleanedResponse = codeMatch[1].trim();
-      } else {
-        cleanedResponse = cleanedResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    // 1. Remove markdown code blocks (standard ```json and ```)
+    if (cleanedResponse.includes('```')) {
+      // enhanced regex to capture content inside fences, handling potential language tags
+      const codeBlockMatch = cleanedResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (codeBlockMatch) {
+        cleanedResponse = codeBlockMatch[1].trim();
       }
     }
 
-    // Try to extract JSON if there's extra text
-    const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      cleanedResponse = jsonMatch[0];
+    // 2. Find the first '{' and last '}' to isolate the JSON object
+    const firstBrace = cleanedResponse.indexOf('{');
+    const lastBrace = cleanedResponse.lastIndexOf('}');
+
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      cleanedResponse = cleanedResponse.substring(firstBrace, lastBrace + 1);
     }
 
     let quizData: QuizPackage;
     try {
       quizData = JSON.parse(cleanedResponse) as QuizPackage;
-    } catch (parseError) {
-      console.error('JSON Parse Error:', parseError);
-      console.error('Response received:', response.substring(0, 500));
-      throw new Error('Invalid JSON response from AI. Please try again.');
+    } catch (initialParseError) {
+      console.warn('Initial JSON parse failed, attempting strict cleanup...', initialParseError);
+
+      try {
+        // Aggressive fix: Double escape backslashes that are NOT followed by valid JSON escape formatting chars
+        // Valid escapes in JSON: \" \\ \/ \b \f \n \r \t \uXXXX
+        // We want to turn "\alpha" (invalid) into "\\alpha" (valid)
+        // We also generally want to turn "\frac" (valid \f + rac) into "\\frac" because it's LaTeX, not form feed
+        // But matching \f is risky if it WAS meant to be a form feed (unlikely in this context).
+        // Let's assume in this context, ANY backslash followed by a letter/symbol that usually denotes LaTeX should be escaped.
+
+        // Strategy 1: Fix obvious syntax errors (invalid escapes)
+        // This regex finds a backslash followed by a char that IS NOT one of the valid escape chars.
+        // We replace '\c' with '\\c'.
+        let repairedResponse = cleanedResponse.replace(/\\([^"\\/bfnrtu])/g, '\\\\$1');
+
+        // Strategy 2: Fix potentially valid but unintended escapes (like \t for tab vs \theta for theta)
+        // This is harder. For now, let's trust that Strategy 1 fixes syntax errors prevents crash.
+        // User's specific error was "Failed to parse", implying syntax error.
+
+        console.log('Attempting re-parse with repaired JSON...');
+        quizData = JSON.parse(repairedResponse) as QuizPackage;
+
+      } catch (secondError) {
+        // If it still fails, checking for common "math mode" unescaped failures specifically
+        console.error('Repaired JSON parse also failed.');
+        console.error('Cleaned JSON payload:', cleanedResponse.substring(0, 500));
+        throw new Error(`Failed to parse AI response. Raw output: ${response.substring(0, 200)}...`);
+      }
     }
 
     // Validate structure
@@ -373,6 +444,9 @@ STRICT RULES (FOLLOW EVERY POINT CAREFULLY)
       console.warn(`Expected 10 questions, got ${quizData.questions.length}`);
       // Still proceed if we have questions, but log a warning
     }
+
+    // Attempt to repair math content
+    quizData = repairQuizData(quizData);
 
     // Validate each question
     for (let i = 0; i < quizData.questions.length; i++) {

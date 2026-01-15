@@ -3,6 +3,12 @@ import { StudentNavbar } from '@/components/StudentNavbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import {
   getPerformanceMetrics,
   getProgressOverTime,
   getSubjectPerformance,
@@ -120,47 +126,26 @@ export default function StudentPractice() {
     const generatedInsights = generateInsights(perfMetrics, progress, weak, strong);
     setInsights(generatedInsights);
 
-    // Fetch YouTube videos for weak areas
-    fetchVideosForWeakAreas(weak);
+    // Initial fetch for top 3 weak areas to populate some data immediately
+    fetchVideosForList(weak.slice(0, 3));
   };
 
-  const fetchVideosForWeakAreas = async (weakAreas: WeakArea[]) => {
-    // Fetch videos for top 6 weak areas
-    const topWeakAreas = weakAreas.slice(0, 6);
-
-    // Fetch videos in parallel for better performance
-    const videoPromises = topWeakAreas.map(async (area) => {
+  const fetchVideosForList = async (areas: { topic: string; subject: string }[]) => {
+    // Fetch videos in parallel
+    areas.map(async (area) => {
       const key = `${area.subject}::${area.topic}`;
-
-      // Skip if already loaded or loading
-      if (weakAreaVideos.has(key) || loadingVideos.has(key)) {
-        return;
-      }
+      if (weakAreaVideos.has(key) || loadingVideos.has(key)) return;
 
       setLoadingVideos(prev => new Set(prev).add(key));
-
       try {
-        console.log(`Fetching YouTube videos for weak area: ${area.topic} (${area.subject})`);
-        const videos = await searchVideosForTopic(area.topic, area.subject, 5); // Get 5 videos per topic
-
-        if (videos.length > 0) {
-          console.log(`Successfully fetched ${videos.length} videos for ${area.topic}`);
-          setWeakAreaVideos(prev => {
-            const newMap = new Map(prev);
-            newMap.set(key, videos);
-            return newMap;
-          });
-        } else {
-          console.warn(`No videos found for ${area.topic}`);
-        }
-      } catch (error) {
-        console.error(`Error fetching videos for ${area.topic}:`, error);
-        // Set empty array to indicate we tried but failed
+        const videos = await searchVideosForTopic(area.topic, area.subject, 3); // Limit to 3 for list view
         setWeakAreaVideos(prev => {
           const newMap = new Map(prev);
-          newMap.set(key, []);
+          newMap.set(key, videos);
           return newMap;
         });
+      } catch (error) {
+        console.error(`Error fetching videos for ${area.topic}:`, error);
       } finally {
         setLoadingVideos(prev => {
           const newSet = new Set(prev);
@@ -169,9 +154,18 @@ export default function StudentPractice() {
         });
       }
     });
+  };
 
-    // Wait for all video fetches to complete
-    await Promise.all(videoPromises);
+  const handleAreaExpand = (value: string, areas: (WeakArea | StrongArea)[]) => {
+    if (!value) return; // Collapsed
+
+    // value format: "subject::topic"
+    const [subject, topic] = value.split('::');
+    const area = areas.find(a => a.subject === subject && a.topic === topic);
+
+    if (area) {
+      fetchVideosForList([area]);
+    }
   };
 
   const generateInsights = (
@@ -592,7 +586,6 @@ Can you give me specific advice on how to improve my weak areas?`;
           </Card>
         )}
 
-        {/* Weak Areas */}
         {weakAreas.length > 0 && (
           <Card className="mb-6">
             <CardHeader>
@@ -600,102 +593,124 @@ Can you give me specific advice on how to improve my weak areas?`;
                 <AlertCircle className="h-5 w-5 text-red-600" />
                 Weak Areas
               </CardTitle>
-              <CardDescription>Topics with accuracy below 60% - Focus on these! Watch suggested videos to improve.</CardDescription>
+              <CardDescription>Topics with accuracy below 60% - Click to see details and study material</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {weakAreas.slice(0, 6).map((area, index) => {
-                  const videoKey = `${area.subject}::${area.topic}`;
-                  const videos = weakAreaVideos.get(videoKey) || [];
-                  const isLoading = loadingVideos.has(videoKey);
+              {/* Outer Accordion: Subjects */}
+              <Accordion type="single" collapsible className="w-full">
+                {Object.entries(
+                  weakAreas.reduce((acc, area) => {
+                    if (!acc[area.subject]) acc[area.subject] = [];
+                    acc[area.subject].push(area);
+                    return acc;
+                  }, {} as Record<string, typeof weakAreas>)
+                ).map(([subject, areas]) => (
+                  <AccordionItem key={subject} value={subject} className="border-b last:border-0 px-2 mb-2">
+                    <AccordionTrigger className="hover:no-underline py-3 px-2 rounded-lg hover:bg-muted/50 group">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-base">{subject}</span>
+                        <Badge variant="secondary" className="ml-2 text-xs font-normal text-muted-foreground bg-secondary/50 group-hover:bg-secondary">
+                          {areas.length} topics
+                        </Badge>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2 pl-4 pr-1">
+                      {/* Inner Accordion: Topics */}
+                      <Accordion type="single" collapsible onValueChange={(val) => handleAreaExpand(val, weakAreas)} className="w-full">
+                        {areas.map((area, index) => {
+                          const videoKey = `${area.subject}::${area.topic}`;
+                          const videos = weakAreaVideos.get(videoKey) || [];
+                          const isLoading = loadingVideos.has(videoKey);
 
-                  return (
-                    <Card key={index} className="border-red-200">
-                      <CardHeader>
-                        <CardTitle className="text-base">{area.topic}</CardTitle>
-                        <CardDescription>{area.subject}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">Accuracy:</span>
-                              <Badge variant="destructive">{area.accuracy.toFixed(1)}%</Badge>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">Avg Time:</span>
-                              <span className="text-sm">{Math.round(area.averageTime)}s</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">Attempts:</span>
-                              <span className="text-sm">{area.totalAttempts}</span>
-                            </div>
-                          </div>
-
-                          {/* Suggested YouTube Videos */}
-                          {isLoading && (
-                            <div className="text-xs text-muted-foreground flex items-center gap-2 border-t pt-3">
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Loading videos...
-                            </div>
-                          )}
-                          {!isLoading && videos.length > 0 && (
-                            <div className="space-y-2 border-t pt-3">
-                              <div className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
-                                <Zap className="h-3 w-3 text-primary" />
-                                Suggested Videos to Improve:
-                              </div>
-                              {videos.map((video, vidIndex) => (
-                                <a
-                                  key={vidIndex}
-                                  href={`https://www.youtube.com/watch?v=${video.id.videoId}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex gap-2 p-2 rounded-lg border hover:bg-muted hover:border-primary transition-all group"
-                                >
-                                  <img
-                                    src={video.snippet.thumbnails.medium.url}
-                                    alt={video.snippet.title}
-                                    className="w-20 h-14 object-cover rounded flex-shrink-0"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-medium line-clamp-2 group-hover:text-primary transition-colors">
-                                      {video.snippet.title}
-                                    </div>
-                                    <div className="text-[10px] text-muted-foreground mt-1">
-                                      {video.snippet.channelTitle}
+                          return (
+                            <AccordionItem key={`${subject}-${index}`} value={videoKey} className="border rounded-lg px-2 mb-2 last:mb-0">
+                              <AccordionTrigger className="hover:no-underline py-2">
+                                <div className="flex items-center justify-between w-full pr-4">
+                                  <div className="flex items-center gap-3 text-left">
+                                    <span className="font-medium text-sm">{area.topic}</span>
+                                    <div className="flex gap-2 text-xs text-muted-foreground">
+                                      <span className="flex items-center gap-1">
+                                        <Clock className="h-3 w-3" /> {Math.round(area.averageTime)}s
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <Target className="h-3 w-3" /> {area.totalAttempts} tries
+                                      </span>
                                     </div>
                                   </div>
-                                </a>
-                              ))}
-                            </div>
-                          )}
-                          {!isLoading && videos.length === 0 && weakAreaVideos.has(videoKey) && (
-                            <div className="text-xs text-muted-foreground border-t pt-3">
-                              No videos found. Try searching manually on YouTube.
-                            </div>
-                          )}
+                                  <Badge variant="destructive" className="ml-2 text-xs">
+                                    {area.accuracy.toFixed(0)}%
+                                  </Badge>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="space-y-4 pt-2 pb-2">
+                                  {/* Suggested YouTube Videos */}
+                                  <div className="space-y-2">
+                                    <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                                      <Zap className="h-3 w-3 text-primary" />
+                                      Recommended Videos
+                                    </div>
 
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full mt-2"
-                            onClick={() => navigate('/student/study-notes')}
-                          >
-                            <BookOpen className="h-4 w-4 mr-2" />
-                            Study Notes
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                                    {isLoading && (
+                                      <div className="text-xs text-muted-foreground flex items-center gap-2 py-2">
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                        Finding best tutorials...
+                                      </div>
+                                    )}
+
+                                    {!isLoading && videos.length > 0 && (
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                        {videos.map((video, vidIndex) => (
+                                          <a
+                                            key={vidIndex}
+                                            href={`https://www.youtube.com/watch?v=${video.id.videoId}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex gap-2 p-1.5 rounded border hover:bg-muted/50 hover:border-primary transition-all group"
+                                          >
+                                            <img
+                                              src={video.snippet.thumbnails.medium.url}
+                                              alt={video.snippet.title}
+                                              className="w-16 h-10 object-cover rounded flex-shrink-0"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                              <div className="text-[10px] font-medium line-clamp-2 group-hover:text-primary transition-colors leading-tight">
+                                                {video.snippet.title}
+                                              </div>
+                                            </div>
+                                          </a>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {!isLoading && videos.length === 0 && weakAreaVideos.has(videoKey) && (
+                                      <p className="text-xs text-muted-foreground py-1">No specific videos found.</p>
+                                    )}
+                                  </div>
+
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full h-7 text-xs"
+                                    onClick={() => navigate('/student/study-notes')}
+                                  >
+                                    <BookOpen className="h-3 w-3 mr-2" />
+                                    View Study Notes
+                                  </Button>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          );
+                        })}
+                      </Accordion>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </CardContent>
           </Card>
         )}
 
-        {/* Strong Areas */}
         {strongAreas.length > 0 && (
           <Card className="mb-6">
             <CardHeader>
@@ -706,34 +721,61 @@ Can you give me specific advice on how to improve my weak areas?`;
               <CardDescription>Topics where you excel (80%+ accuracy)</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {strongAreas.slice(0, 6).map((area, index) => (
-                  <Card key={index} className="border-green-200">
-                    <CardHeader>
-                      <CardTitle className="text-base">{area.topic}</CardTitle>
-                      <CardDescription>{area.subject}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Accuracy:</span>
-                          <Badge variant="default" className="bg-green-600">
-                            {area.accuracy.toFixed(1)}%
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Avg Time:</span>
-                          <span className="text-sm">{Math.round(area.averageTime)}s</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Attempts:</span>
-                          <span className="text-sm">{area.totalAttempts}</span>
-                        </div>
+              {/* Outer Accordion: Subjects */}
+              <Accordion type="single" collapsible className="w-full">
+                {Object.entries(
+                  strongAreas.reduce((acc, area) => {
+                    if (!acc[area.subject]) acc[area.subject] = [];
+                    acc[area.subject].push(area);
+                    return acc;
+                  }, {} as Record<string, typeof strongAreas>)
+                ).map(([subject, areas]) => (
+                  <AccordionItem key={subject} value={subject} className="border-b last:border-0 px-2 mb-2">
+                    <AccordionTrigger className="hover:no-underline py-3 px-2 rounded-lg hover:bg-muted/50 group">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-base">{subject}</span>
+                        <Badge variant="secondary" className="ml-2 text-xs font-normal text-muted-foreground bg-secondary/50 group-hover:bg-secondary">
+                          {areas.length} topics
+                        </Badge>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2 pl-4 pr-1">
+                      {/* Inner Accordion: Topics */}
+                      <Accordion type="single" collapsible className="w-full">
+                        {areas.map((area, index) => (
+                          <AccordionItem key={`${subject}-${index}`} value={`${area.subject}::${area.topic}`} className="border rounded-lg px-2 mb-2 last:mb-0">
+                            <AccordionTrigger className="hover:no-underline py-2">
+                              <div className="flex items-center justify-between w-full pr-4">
+                                <div className="flex items-center gap-3 text-left">
+                                  <span className="font-medium text-sm">{area.topic}</span>
+                                  <div className="flex gap-2 text-xs text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" /> {Math.round(area.averageTime)}s
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Target className="h-3 w-3" /> {area.totalAttempts} tries
+                                    </span>
+                                  </div>
+                                </div>
+                                <Badge variant="default" className="bg-green-600 ml-2 text-xs">
+                                  {area.accuracy.toFixed(0)}%
+                                </Badge>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-2 pt-2 pb-2">
+                                <p className="text-[10px] text-muted-foreground text-center pt-2">
+                                  You have mastered this topic! Keep it up.
+                                </p>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </AccordionContent>
+                  </AccordionItem>
                 ))}
-              </div>
+              </Accordion>
             </CardContent>
           </Card>
         )}

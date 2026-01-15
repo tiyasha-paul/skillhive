@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StudentNavbar } from '@/components/StudentNavbar';
-import { Edit, Github, Linkedin, Mail, Phone, Calendar, MapPin, BookOpen, User } from 'lucide-react';
+import { Edit, Github, Linkedin, Mail, Phone, Calendar, MapPin, BookOpen, User, Info, Brain, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Card,
@@ -30,6 +30,18 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
@@ -247,9 +259,9 @@ export default function StudentProfile() {
     const quizResults = getQuizResults();
     const activities = getTotalActivityCount();
     const xp = quizResults.length * 50 + activities * 10;
-    const currentLevel = Math.floor(xp / 350);
-    const xpInLevel = xp % 350;
-    const xpNeeded = 350 - xpInLevel;
+    const currentLevel = Math.floor(xp / 300);
+    const xpInLevel = xp % 300;
+    const xpNeeded = 300 - xpInLevel;
     return { xp, currentLevel, xpInLevel, xpNeeded };
   }, []);
 
@@ -447,8 +459,19 @@ export default function StudentProfile() {
                         <Input id="branch" value={profile.branch} onChange={(e) => handleProfileChange('branch', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="year">Year / Semester</Label>
-                        <Input id="year" value={profile.year} onChange={(e) => handleProfileChange('year', e.target.value)} />
+                        <Label htmlFor="year">Semester</Label>
+                        <Select value={profile.year} onValueChange={(value) => handleProfileChange('year', value)}>
+                          <SelectTrigger id="year">
+                            <SelectValue placeholder="Select semester" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                              <SelectItem key={sem} value={sem.toString()}>
+                                Semester {sem}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="github">GitHub URL</Label>
@@ -515,9 +538,9 @@ export default function StudentProfile() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5" /> Year / Semester
+                    <Calendar className="h-3.5 w-3.5" /> Semester
                   </p>
-                  <p className="text-base pl-6">{profile.year || 'Not set'}</p>
+                  <p className="text-base pl-6">{profile.year ? `Semester ${profile.year}` : 'Not set'}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -537,14 +560,53 @@ export default function StudentProfile() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Live Achievements</CardTitle>
-              <CardDescription>Your gamified growth trail</CardDescription>
+              <div className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Live Achievements</CardTitle>
+                  <CardDescription>Your gamified growth trail</CardDescription>
+                </div>
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground/50 hover:text-primary">
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80" align="end">
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-semibold">How to earn XP</h4>
+                      <div className="grid gap-3">
+                        <div className="grid grid-cols-[25px_1fr_auto] items-center gap-2">
+                          <Brain className="h-4 w-4 text-indigo-500" />
+                          <div className="text-sm">
+                            <p className="font-medium text-foreground">Quiz Completed</p>
+                            <p className="text-xs text-muted-foreground">Major milestone</p>
+                          </div>
+                          <span className="text-sm font-bold text-indigo-600">+50 XP</span>
+                        </div>
+                        <div className="grid grid-cols-[25px_1fr_auto] items-center gap-2">
+                          <Zap className="h-4 w-4 text-amber-500" />
+                          <div className="text-sm">
+                            <p className="font-medium text-foreground">Activity Logged</p>
+                            <p className="text-xs text-muted-foreground">Daily engagement</p>
+                          </div>
+                          <span className="text-sm font-bold text-amber-600">+10 XP</span>
+                        </div>
+                      </div>
+                      <Separator />
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Level Up Requirement</span>
+                        <span className="font-mono font-medium text-foreground">300 XP / level</span>
+                      </div>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">XP Earned</p>
                 <p className="text-2xl font-bold">{xpData.xp.toLocaleString()} XP</p>
-                <Progress value={(xpData.xpInLevel / 350) * 100} className="mt-2" />
+                <Progress value={(xpData.xpInLevel / 300) * 100} className="mt-2" />
                 <p className="text-xs text-muted-foreground mt-1">
                   Level {xpData.currentLevel + 1} · {xpData.xpNeeded} XP to level up
                 </p>

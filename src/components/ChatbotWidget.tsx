@@ -92,11 +92,22 @@ export function ChatbotWidget() {
       // Optional: Focus logic could go here
     };
 
+
     window.addEventListener('open-chatbot-with-context', handleOpenWithContext as EventListener);
     return () => {
       window.removeEventListener('open-chatbot-with-context', handleOpenWithContext as EventListener);
     };
   }, []);
+
+  // Clear chat history when user logs out
+  useEffect(() => {
+    // If not loading and no user, we consider it a logged-out state.
+    // We clear the specific storage key for the chatbot history.
+    if (!loading && !user) {
+      sessionStorage.removeItem(STORAGE_KEY);
+      setMessages([introMessage]);
+    }
+  }, [user, loading]);
 
   useEffect(() => {
     if (!scrollRef.current || !isOpen) return;

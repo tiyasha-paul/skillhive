@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StudentNavbar } from '@/components/StudentNavbar';
+import { Edit, Github, Linkedin, Mail, Phone, Calendar, MapPin, BookOpen, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Card,
@@ -20,14 +21,15 @@ import {
   AvatarImage,
 } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
@@ -47,10 +49,9 @@ const PROFILE_STORAGE_KEY = 'student_profile_extended';
 export default function StudentProfile() {
   const { user, userRole } = useAuth();
   const { toast } = useToast();
-  const [autoSave, setAutoSave] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const didMount = useRef(false);
+  const [saving, setSaving] = useState(false);
 
   const [profile, setProfile] = useState({
     fullName: '',
@@ -60,11 +61,9 @@ export default function StudentProfile() {
     year: '',
     phone: '',
     joinDate: '',
-    lastActive: '',
-    bio: '',
+    lastLogin: '',
     github: '',
     linkedin: '',
-    learningMode: 'video',
   });
 
   // Load profile data from database and localStorage
@@ -88,14 +87,8 @@ export default function StudentProfile() {
         const stored = localStorage.getItem(PROFILE_STORAGE_KEY);
         const extendedProfile = stored ? JSON.parse(stored) : {};
 
-        // Get last active from activity tracker
-        const activities = getActivityRecords();
-        const lastActivity = activities
-          .filter(a => a.count > 0)
-          .sort((a, b) => b.date.localeCompare(a.date))[0];
-        const lastActive = lastActivity 
-          ? new Date(lastActivity.date).toLocaleString()
-          : new Date().toLocaleString();
+        // Get last active from activity tracker (unused now)
+        // const activities = getActivityRecords();
 
         setProfile({
           fullName: dbProfile?.full_name || user?.user_metadata?.full_name || extendedProfile.fullName || 'Student',
@@ -104,14 +97,14 @@ export default function StudentProfile() {
           branch: extendedProfile.branch || '',
           year: extendedProfile.year || '',
           phone: extendedProfile.phone || '',
-          joinDate: dbProfile?.created_at 
+          joinDate: dbProfile?.created_at
             ? new Date(dbProfile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
             : '',
-          lastActive,
-          bio: extendedProfile.bio || '',
+          lastLogin: user?.last_sign_in_at
+            ? new Date(user.last_sign_in_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+            : 'First Login',
           github: extendedProfile.github || '',
           linkedin: extendedProfile.linkedin || '',
-          learningMode: extendedProfile.learningMode || 'video',
         });
       } catch (error) {
         console.error('Error loading profile:', error);
@@ -150,7 +143,7 @@ export default function StudentProfile() {
     const metrics = getPerformanceMetrics();
     const avgAccuracy = metrics.averageAccuracy;
     const difficultyRate = metrics.difficultySuccessRate;
-    
+
     return [
       { label: 'Core Concepts', value: Math.round(avgAccuracy) },
       { label: 'Applied Labs', value: Math.round(difficultyRate.medium) },
@@ -162,7 +155,7 @@ export default function StudentProfile() {
   const conceptBreakdown = useMemo(() => {
     const weakAreas = getWeakAreas();
     const strongAreas = getStrongAreas();
-    
+
     const concepts = [
       ...strongAreas.slice(0, 3).map(area => ({
         concept: area.topic,
@@ -174,11 +167,11 @@ export default function StudentProfile() {
       })),
     ];
 
-    return concepts.length > 0 
+    return concepts.length > 0
       ? concepts.slice(0, 5)
       : [
-          { concept: 'No data yet', mastery: 'Beginner' as const },
-        ];
+        { concept: 'No data yet', mastery: 'Beginner' as const },
+      ];
   }, []);
 
   // Get quiz history from actual quiz results
@@ -189,7 +182,7 @@ export default function StudentProfile() {
 
     return results.map(result => {
       const avgDifficulty = result.difficultyStats.hard.total > 0 ? 'Hard' :
-                           result.difficultyStats.medium.total > 0 ? 'Medium' : 'Easy';
+        result.difficultyStats.medium.total > 0 ? 'Medium' : 'Easy';
       const minutes = Math.floor(result.totalTime / 60);
       const seconds = result.totalTime % 60;
       const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
@@ -231,7 +224,7 @@ export default function StudentProfile() {
       const diffMs = now.getTime() - videoDate.getTime();
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      
+
       let lastWatched = '';
       if (diffDays > 0) {
         lastWatched = `${diffDays}d ago`;
@@ -265,7 +258,7 @@ export default function StudentProfile() {
     const quizResults = getQuizResults();
     const streak = getActivityStreak();
     const totalActivities = getTotalActivityCount();
-    
+
     const achievementList = [];
 
     // Consistency Champ - based on streak
@@ -316,7 +309,7 @@ export default function StudentProfile() {
     try {
       const savedJobs = JSON.parse(localStorage.getItem('savedJobs') || '[]');
       const appliedJobs = JSON.parse(localStorage.getItem('appliedJobs') || '[]');
-      
+
       const lastApplied = appliedJobs.length > 0
         ? new Date(appliedJobs[appliedJobs.length - 1].appliedAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : 'Never';
@@ -337,26 +330,7 @@ export default function StudentProfile() {
     }
   }, []);
 
-  // Auto-save profile changes
-  useEffect(() => {
-    if (!autoSave || !user) return;
-    if (!didMount.current) {
-      didMount.current = true;
-      return;
-    }
 
-    setSaving(true);
-    const id = setTimeout(async () => {
-      await saveProfile();
-      setSaving(false);
-      toast({
-        title: 'Profile synced',
-        description: 'Your latest updates are now live.',
-      });
-    }, 600);
-
-    return () => clearTimeout(id);
-  }, [profile, autoSave, toast, user]);
 
   const saveProfile = async () => {
     if (!user) return;
@@ -380,10 +354,8 @@ export default function StudentProfile() {
         branch: profile.branch,
         year: profile.year,
         phone: profile.phone,
-        bio: profile.bio,
         github: profile.github,
         linkedin: profile.linkedin,
-        learningMode: profile.learningMode,
       };
       localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(extendedProfile));
     } catch (error) {
@@ -432,7 +404,7 @@ export default function StudentProfile() {
       <StudentNavbar />
       <main className="container mx-auto px-4 py-8 space-y-8">
         <header className="space-y-2">
-          <p className="text-sm uppercase tracking-wide text-muted-foreground">👤 Profile Command Center</p>
+
           <h1 className="text-3xl font-semibold text-foreground">Hey {profile.fullName.split(' ')[0] || 'Student'}, keep the momentum alive!</h1>
           <p className="text-muted-foreground">
             Edit details, track learning, monitor achievements, and stay job-ready — all powered by real-time adaptive signals.
@@ -441,33 +413,93 @@ export default function StudentProfile() {
 
         <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle>Profile Overview</CardTitle>
                 <CardDescription>Live view of your learner identity</CardDescription>
               </div>
-              <span className={cn('text-xs font-medium px-3 py-1 rounded-full', userRole === 'mentor' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800')}>
-                {userRole === 'mentor' ? 'Mentor' : 'Student'}
-              </span>
+              <Dialog open={isEditing} onOpenChange={setIsEditing}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Edit className="h-4 w-4" />
+                    Edit Profile
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Edit Profile</DialogTitle>
+                    <DialogDescription>
+                      Update your personal details and public profile info.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Full name</Label>
+                        <Input id="name" value={profile.fullName} onChange={(e) => handleProfileChange('fullName', e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone number</Label>
+                        <Input id="phone" value={profile.phone} onChange={(e) => handleProfileChange('phone', e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="branch">Stream / Branch</Label>
+                        <Input id="branch" value={profile.branch} onChange={(e) => handleProfileChange('branch', e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="year">Year / Semester</Label>
+                        <Input id="year" value={profile.year} onChange={(e) => handleProfileChange('year', e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="github">GitHub URL</Label>
+                        <Input id="github" value={profile.github} onChange={(e) => handleProfileChange('github', e.target.value)} placeholder="https://github.com/..." />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="linkedin">LinkedIn URL</Label>
+                        <Input id="linkedin" value={profile.linkedin} onChange={(e) => handleProfileChange('linkedin', e.target.value)} placeholder="https://linkedin.com/in/..." />
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                    <Button onClick={() => { handleManualSave(); setIsEditing(false); }} disabled={saving}>
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <Avatar className="h-20 w-20">
+              <div className="flex flex-col gap-6 sm:flex-row">
+                <Avatar className="h-24 w-24 border-4 border-background shadow-sm">
                   <AvatarImage src={`https://api.dicebear.com/7.x/thumbs/svg?seed=${profile.fullName}`} alt={profile.fullName} />
                   <AvatarFallback>{profile.fullName.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <div className="flex-1 space-y-1">
-                  <h2 className="text-2xl font-semibold">{profile.fullName}</h2>
-                  <p className="text-sm text-muted-foreground">{profile.email}</p>
-                  <p className="text-sm text-muted-foreground">Member since {profile.joinDate}</p>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Button variant="outline" size="sm" onClick={handleManualSave} disabled={saving}>
-                    {saving ? 'Saving…' : 'Save changes'}
-                  </Button>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Switch id="autosave" checked={autoSave} onCheckedChange={setAutoSave} />
-                    <Label htmlFor="autosave">Auto-sync</Label>
+                <div className="flex-1 space-y-2">
+                  <div>
+                    <h2 className="text-2xl font-bold">{profile.fullName}</h2>
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Mail className="h-3 w-3" /> {profile.email}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <Badge variant="secondary" className="gap-1 font-normal">
+                      <User className="h-3 w-3" /> {userRole === 'mentor' ? 'Mentor' : 'Student'}
+                    </Badge>
+                    {profile.linkedin && (
+                      <a href={profile.linkedin} target="_blank" rel="noreferrer" className="cursor-pointer">
+                        <Badge variant="outline" className="gap-1 hover:bg-muted">
+                          <Linkedin className="h-3 w-3" /> LinkedIn
+                        </Badge>
+                      </a>
+                    )}
+                    {profile.github && (
+                      <a href={profile.github} target="_blank" rel="noreferrer" className="cursor-pointer">
+                        <Badge variant="outline" className="gap-1 hover:bg-muted">
+                          <Github className="h-3 w-3" /> GitHub
+                        </Badge>
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -476,20 +508,28 @@ export default function StudentProfile() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Branch / Stream</p>
-                  <p className="text-base">{profile.branch}</p>
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <BookOpen className="h-3.5 w-3.5" /> Branch / Stream
+                  </p>
+                  <p className="text-base pl-6">{profile.branch || 'Not set'}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Year / Semester</p>
-                  <p className="text-base">{profile.year}</p>
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5" /> Year / Semester
+                  </p>
+                  <p className="text-base pl-6">{profile.year || 'Not set'}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Phone Number</p>
-                  <p className="text-base">{profile.phone}</p>
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Phone className="h-3.5 w-3.5" /> Phone Number
+                  </p>
+                  <p className="text-base pl-6">{profile.phone || 'Not set'}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Last Active</p>
-                  <p className="text-base">{profile.lastActive}</p>
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <MapPin className="h-3.5 w-3.5" /> Last Login
+                  </p>
+                  <p className="text-base pl-6">{profile.lastLogin}</p>
                 </div>
               </div>
             </CardContent>
@@ -801,65 +841,7 @@ export default function StudentProfile() {
           )}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Editable Fields</CardTitle>
-            <CardDescription>Update personal info, bio, and social links</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full name</Label>
-                <Input id="name" value={profile.fullName} onChange={(e) => handleProfileChange('fullName', e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone number</Label>
-                <Input id="phone" value={profile.phone} onChange={(e) => handleProfileChange('phone', e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="branch">Stream / Branch</Label>
-                <Input id="branch" value={profile.branch} onChange={(e) => handleProfileChange('branch', e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="year">Year / Semester</Label>
-                <Input id="year" value={profile.year} onChange={(e) => handleProfileChange('year', e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="github">GitHub</Label>
-                <Input id="github" value={profile.github} onChange={(e) => handleProfileChange('github', e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="linkedin">LinkedIn</Label>
-                <Input id="linkedin" value={profile.linkedin} onChange={(e) => handleProfileChange('linkedin', e.target.value)} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio / About</Label>
-              <Textarea id="bio" rows={4} value={profile.bio} onChange={(e) => handleProfileChange('bio', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Preferred learning mode</Label>
-              <Select value={profile.learningMode} onValueChange={(value) => handleProfileChange('learningMode', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  {learningModes.map((mode) => (
-                    <SelectItem key={mode.value} value={mode.value}>
-                      {mode.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={handleManualSave} disabled={saving}>
-                {saving ? 'Saving…' : 'Save profile'}
-              </Button>
-              <Button variant="outline">Upload new photo</Button>
-            </div>
-          </CardContent>
-        </Card>
+
 
         <Card>
           <CardHeader>

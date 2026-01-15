@@ -92,16 +92,16 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
 
   const handleSubmit = () => {
     if (!quiz || !subject || !branch || !semester || !quizStartTime) return;
-    
+
     // Calculate results and save
     const totalTime = (Date.now() - quizStartTime) / 1000; // in seconds
     const quizAnswers: QuizAnswer[] = quiz.map((question, index) => {
       const selectedAnswer = answers[index] || '';
       const isCorrect = selectedAnswer === question.correct;
-      const timeTaken = questionStartTimes[index] 
-        ? (Date.now() - questionStartTimes[index]) / 1000 
+      const timeTaken = questionStartTimes[index]
+        ? (Date.now() - questionStartTimes[index]) / 1000
         : totalTime / quiz.length; // Estimate if not tracked
-      
+
       return {
         qid: question.qid,
         question,
@@ -120,14 +120,14 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
     // Calculate stats
     const correctCount = quizAnswers.filter(a => a.isCorrect).length;
     const accuracy = (correctCount / quiz.length) * 100;
-    
+
     // Difficulty stats
     const difficultyStats = {
       easy: { correct: 0, total: 0, accuracy: 0 },
       medium: { correct: 0, total: 0, accuracy: 0 },
       hard: { correct: 0, total: 0, accuracy: 0 },
     };
-    
+
     quizAnswers.forEach(answer => {
       const diff = answer.difficulty;
       difficultyStats[diff].total++;
@@ -135,7 +135,7 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
         difficultyStats[diff].correct++;
       }
     });
-    
+
     Object.keys(difficultyStats).forEach(diff => {
       const stats = difficultyStats[diff as keyof typeof difficultyStats];
       stats.accuracy = stats.total > 0 ? (stats.correct / stats.total) * 100 : 0;
@@ -157,7 +157,7 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
       }
       topicStats[answer.topic].avgTime += answer.timeTaken;
     });
-    
+
     Object.keys(topicStats).forEach(topic => {
       const stats = topicStats[topic];
       stats.accuracy = stats.total > 0 ? (stats.correct / stats.total) * 100 : 0;
@@ -182,7 +182,7 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
 
     // Record activity
     recordActivity('quiz_completed', { subject, branch, semester });
-    
+
     toast.success('Quiz results saved!', {
       description: 'View your progress in the Practice section',
     });
@@ -213,7 +213,7 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
 
   if (showResults && quiz) {
     return (
-      <Dialog open={true} onOpenChange={() => {}}>
+      <Dialog open={true} onOpenChange={(open) => !open && onClose?.()}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Quiz Results</DialogTitle>
@@ -293,18 +293,18 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => { 
-                setShowResults(false); 
-                setCurrentQuestion(0); 
-                setAnswers({}); 
+              <Button variant="outline" onClick={() => {
+                setShowResults(false);
+                setCurrentQuestion(0);
+                setAnswers({});
                 setQuestionStartTimes({});
                 setQuizStartTime(Date.now());
               }}>
                 Retake Quiz
               </Button>
-              <Button variant="outline" onClick={() => { 
-                setQuiz(null); 
-                setShowResults(false); 
+              <Button variant="outline" onClick={() => {
+                setQuiz(null);
+                setShowResults(false);
                 setAnswers({});
                 setQuestionStartTimes({});
                 setQuizStartTime(null);
@@ -328,7 +328,7 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
     const userAnswer = answers[currentQuestion];
 
     return (
-      <Dialog open={true} onOpenChange={() => {}}>
+      <Dialog open={true} onOpenChange={(open) => !open && onClose?.()}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -394,7 +394,7 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
   }
 
   return (
-    <Dialog open={true} onOpenChange={() => onClose?.()}>
+    <Dialog open={true} onOpenChange={(open) => !open && onClose?.()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Take Quiz</DialogTitle>

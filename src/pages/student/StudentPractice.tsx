@@ -54,6 +54,7 @@ import {
   Activity,
   Lightbulb,
   Loader2,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -270,14 +271,37 @@ export default function StudentPractice() {
 
       <main className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-            <BarChart3 className="h-8 w-8" />
-            Practice Analytics
-          </h1>
-          <p className="text-muted-foreground">
-            Track your progress, identify weak areas, and improve your performance
-          </p>
+        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+              <BarChart3 className="h-8 w-8" />
+              Practice Analytics
+            </h1>
+            <p className="text-muted-foreground">
+              Track your progress, identify weak areas, and improve your performance
+            </p>
+          </div>
+          <Button
+            onClick={() => {
+              const context = `Here is my current practice summary:
+- Average Score: ${metrics.averageScore.toFixed(1)}/10
+- Average Accuracy: ${metrics.averageAccuracy.toFixed(1)}%
+- Average Time per Question: ${Math.round(metrics.averageTimePerQuestion)}s
+- Weakest Subject: ${metrics.weakestSubject.subject} (${metrics.weakestSubject.accuracy.toFixed(1)}%)
+- Best Subject: ${metrics.bestSubject.subject} (${metrics.bestSubject.accuracy.toFixed(1)}%)
+- Recent Weak Topics: ${weakAreas.slice(0, 3).map(w => w.topic).join(', ')}
+
+Can you give me specific advice on how to improve my weak areas?`;
+
+              window.dispatchEvent(new CustomEvent('open-chatbot-with-context', {
+                detail: { context }
+              }));
+            }}
+            className="gap-2"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Ask Study Coach
+          </Button>
         </div>
 
         {/* Performance Summary Cards */}

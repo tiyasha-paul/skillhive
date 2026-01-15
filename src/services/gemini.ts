@@ -6,7 +6,7 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
 // Use v1beta endpoint with a modern Flash model.
 // You requested Gemini 2.x Flash; update GEMINI_MODEL if your key supports 2.5.
 // Examples: 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-2.5-flash'.
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-flash-latest';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 export interface ResumeAnalysis {
@@ -16,40 +16,151 @@ export interface ResumeAnalysis {
   summary: string;
 }
 
+export interface ChatMessagePart {
+  text: string;
+}
+
+export interface GeminiContent {
+  role: 'user' | 'model';
+  parts: ChatMessagePart[];
+}
+
+export interface GeminiSystemInstruction {
+  parts: ChatMessagePart[];
+}
+
+export interface GeminiRequest {
+  contents: GeminiContent[];
+  system_instruction?: GeminiSystemInstruction;
+  generationConfig?: {
+    temperature?: number;
+    maxOutputTokens?: number;
+  };
+}
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Core function to call Gemini API with full chat history and system instruction.
+ */
+export async function generateChatResponse(
+  history: GeminiContent[],
+  systemInstruction: string,
+  retries = 2
+): Promise<string> {
+  console.log('[Gemini Service] Starting chat request...');
+
+  if (!GEMINI_API_KEY) {
+    console.error('[Gemini Service] API Key is missing!');
+    throw new Error('Gemini API key is not configured. Please set VITE_GEMINI_API_KEY in your .env file.');
+  }
+
+  const requestBody: GeminiRequest = {
+    contents: history,
+    system_instruction: {
+      parts: [{ text: systemInstruction }]
+    }
+  };
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const url = `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('[Gemini Service] Error body:', errorBody);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorBody);
+        } catch {
+          errorData = { error: { message: errorBody } };
+        }
+
+        // Handle 429 (Quota Exceeded) specifically
+        if (response.status === 429) {
+          const errorMessage = errorData?.error?.message || 'Quota exceeded';
+          throw new Error(
+            `Gemini API quota exceeded. Please check your billing and quota limits. Error: ${errorMessage}`
+          );
+        }
+
+        if (response.status === 503) {
+          throw new Error('Service Unavailable');
+        }
+
+        throw new Error(`Gemini API error: ${response.status}. ${errorBody.substring(0, 200)}`);
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+      if (!text) {
+        throw new Error('Empty response from Gemini.');
+      }
+      return text;
+    } catch (error) {
+      if (attempt === retries) {
+        throw error;
+      }
+      const delay = Math.pow(2, attempt) * 1000;
+      console.warn(`Gemini API error, retrying in ${delay}ms...`);
+      await sleep(delay);
+    }
+  }
+  throw new Error('Failed to generate response after retries.');
+}
+
+// Legacy function for backward compatibility or simple text generation
+export async function generateGeminiText(prompt: string, retries = 2): Promise<string> {
+  const history: GeminiContent[] = [{
+    role: 'user',
+    parts: [{ text: prompt }]
+  }];
+  // Pass an empty system instruction for legacy calls
+  return generateChatResponse(history, '', retries);
+}
+
+// Keep backward compatibility aliases
+export async function generateOpenRouterText(prompt: string): Promise<string> {
+  return generateGeminiText(prompt);
+}
+
+export const generateChatGPTText = generateGeminiText;
+
 export async function analyzeResume(resumeText: string, jobDescription?: string): Promise<ResumeAnalysis> {
   try {
     const prompt = jobDescription
       ? `Analyze this resume and provide suggestions for applying to this job:
-
 Job Description: ${jobDescription}
-
 Resume Text:
 ${resumeText}
-
 Please provide:
 1. Key strengths that match the job requirements
 2. Areas for improvement
 3. Specific suggestions to enhance the resume for this job
 4. A brief summary of the resume
-
 Format your response as a structured analysis.`
-
       : `Analyze this resume and provide suggestions:
-
 Resume Text:
 ${resumeText}
-
 Please provide:
 1. Key strengths
 2. Areas for improvement
 3. Specific suggestions to enhance the resume
 4. A brief summary
-
 Format your response as a structured analysis.`;
 
-    const text = await generateOpenRouterText(prompt);
-
-    // Parse the response into structured format
+    const text = await generateGeminiText(prompt);
     return parseGeminiResponse(text);
   } catch (error) {
     console.error('Error analyzing resume:', error);
@@ -62,125 +173,12 @@ Format your response as a structured analysis.`;
   }
 }
 
-async function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-export async function generateGeminiText(prompt: string, retries = 2): Promise<string> {
-  if (!GEMINI_API_KEY) {
-    throw new Error('Gemini API key is not configured. Please set VITE_GEMINI_API_KEY in your .env file.');
-  }
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const url = `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`;
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-        }),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorBody);
-        } catch {
-          errorData = { error: { message: errorBody } };
-        }
-
-        // Handle 429 (Quota Exceeded) specifically
-        if (response.status === 429) {
-          const errorMessage = errorData?.error?.message || 'Quota exceeded';
-          throw new Error(
-            `Gemini API quota exceeded. Please check your billing and quota limits at https://ai.google.dev/gemini-api/docs/quota. ` +
-            `You may need to upgrade your plan or wait for quota reset. Error: ${errorMessage}`
-          );
-        }
-
-        // Handle 403 (Forbidden) - might be API key issue
-        if (response.status === 403) {
-          throw new Error(
-            `Gemini API access forbidden. Please verify your API key has the correct permissions and billing is enabled. ` +
-            `Visit https://ai.google.dev/ to check your API key status.`
-          );
-        }
-
-        // For other errors, retry if we have attempts left
-        if (attempt < retries && response.status >= 500) {
-          const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 1s, 2s, 4s
-          console.warn(`Gemini API error ${response.status}, retrying in ${delay}ms... (attempt ${attempt + 1}/${retries + 1})`);
-          await sleep(delay);
-          continue;
-        }
-
-        console.error('Gemini API error response:', errorBody);
-        throw new Error(`Gemini API error: ${response.status}. ${errorBody.substring(0, 200)}`);
-      }
-
-      const data = await response.json();
-
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      if (!text) {
-        console.error('Empty response from Gemini. Full response:', JSON.stringify(data, null, 2));
-        throw new Error('Empty response from Gemini. Please try again.');
-      }
-      return text;
-    } catch (error) {
-      // If it's a quota error or final attempt, throw immediately
-      if (error instanceof Error && (error.message.includes('quota') || attempt === retries)) {
-        throw error;
-      }
-
-      // For network errors, retry
-      if (attempt < retries) {
-        const delay = Math.pow(2, attempt) * 1000;
-        console.warn(`Request failed, retrying in ${delay}ms... (attempt ${attempt + 1}/${retries + 1})`);
-        await sleep(delay);
-        continue;
-      }
-
-      // Final attempt failed
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Failed to connect to Gemini API. Please check your connection and try again.');
-    }
-  }
-
-  throw new Error('Failed to generate response after retries.');
-}
-
-// Keep backward compatibility aliases
-export async function generateOpenRouterText(prompt: string): Promise<string> {
-  return generateGeminiText(prompt);
-}
-
-// Keep the old function names for backward compatibility
-export const generateChatGPTText = generateGeminiText;
-
 function parseGeminiResponse(text: string): ResumeAnalysis {
-  // Simple parsing - in production, you'd want more robust parsing
   const lines = text.split('\n').filter(line => line.trim());
-
   const strengths: string[] = [];
   const improvements: string[] = [];
   const suggestions: string[] = [];
   let summary = '';
-
   let currentSection = '';
 
   for (const line of lines) {
@@ -196,24 +194,12 @@ function parseGeminiResponse(text: string): ResumeAnalysis {
       currentSection = 'summary';
     } else if (line.trim().startsWith('-') || line.trim().startsWith('•') || line.trim().match(/^\d+\./)) {
       const cleanLine = line.replace(/^[-•\d.\s]+/, '').trim();
-
-      if (currentSection === 'strengths' && cleanLine) {
-        strengths.push(cleanLine);
-      } else if (currentSection === 'improvements' && cleanLine) {
-        improvements.push(cleanLine);
-      } else if (currentSection === 'suggestions' && cleanLine) {
-        suggestions.push(cleanLine);
-      }
+      if (currentSection === 'strengths' && cleanLine) strengths.push(cleanLine);
+      else if (currentSection === 'improvements' && cleanLine) improvements.push(cleanLine);
+      else if (currentSection === 'suggestions' && cleanLine) suggestions.push(cleanLine);
     } else if (currentSection === 'summary' && line.trim()) {
       summary += line.trim() + ' ';
     }
-  }
-
-  // If parsing didn't work well, use the raw text
-  if (strengths.length === 0 && improvements.length === 0 && suggestions.length === 0) {
-    const paragraphs = text.split('\n\n').filter(p => p.trim());
-    suggestions.push(...paragraphs.slice(0, 5));
-    summary = paragraphs[0] || text.substring(0, 200);
   }
 
   return {
@@ -226,33 +212,22 @@ function parseGeminiResponse(text: string): ResumeAnalysis {
 
 import * as pdfjsLib from 'pdfjs-dist';
 
-// ... other imports ...
-
 // Extract text from PDF using PDF.js
 export async function extractTextFromPDF(file: File): Promise<string> {
   try {
-    // Set worker path
-    // Using unpkg for the worker script corresponding to the installed version
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
     let fullText = '';
-
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
+      const pageText = textContent.items.map((item: any) => item.str).join(' ');
       fullText += pageText + '\n';
     }
-
     return fullText;
   } catch (error) {
     console.error('Error extracting text from PDF:', error);
     throw new Error('Failed to extract text from PDF file. Please ensure it is a valid PDF.');
   }
 }
-

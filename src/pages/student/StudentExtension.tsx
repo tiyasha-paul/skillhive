@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { StudentNavbar } from '@/components/StudentNavbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Chrome, Activity, Brain, AlertCircle, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Download, Chrome, Activity, Brain, AlertCircle, Clock, MessageSquare } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
     BarChart,
@@ -41,6 +42,7 @@ export default function StudentExtension() {
     });
     const [weeklyData, setWeeklyData] = useState<any[]>([]);
     const [topSites, setTopSites] = useState<Item[]>([]);
+    const [topSitesToday, setTopSitesToday] = useState<Item[]>([]);
 
     useEffect(() => {
         // Listen for data from extension content script
@@ -152,13 +154,39 @@ export default function StudentExtension() {
             }
         });
 
+        // 4. Top Sites (Today)
+        const siteMapToday: Record<string, { duration: number, category: string }> = {};
+        log.forEach(entry => {
+            if (entry.startTime >= todayStart) {
+                if (!siteMapToday[entry.domain]) {
+                    siteMapToday[entry.domain] = { duration: 0, category: entry.category };
+                }
+                siteMapToday[entry.domain].duration += entry.duration;
+                if (entry.category !== 'Neutral' && entry.category !== 'Unknown') {
+                    if (siteMapToday[entry.domain].category === 'Neutral' || siteMapToday[entry.domain].category === 'Unknown') {
+                        siteMapToday[entry.domain].category = entry.category;
+                    }
+                }
+            }
+        });
+
         const sortedSites = Object.entries(siteMap)
             .map(([domain, data]) => ({ domain, ...data }))
             .sort((a, b) => b.duration - a.duration)
             .slice(0, 10); // Top 10
 
+        const sortedSitesToday = Object.entries(siteMapToday)
+            .map(([domain, data]) => ({ domain, ...data }))
+            .sort((a, b) => b.duration - a.duration)
+            .slice(0, 10); // Top 10 Today
+
         setTopSites(sortedSites);
+        setTopSitesToday(sortedSitesToday);
     };
+
+
+
+
 
     const formatDuration = (seconds: number) => {
         const h = Math.floor(seconds / 3600);
@@ -183,10 +211,43 @@ export default function StudentExtension() {
                         </p>
                     </div>
 
-                    <Button size="lg" className="gap-2" onClick={() => window.open('/extension.zip', '_blank')}>
-                        <Chrome className="w-5 h-5" />
-                        Download Extension
-                    </Button>
+                    <div className="flex gap-2">
+                        {isConnected && (
+                            <Button
+                                size="lg"
+                                className="gap-2"
+                                onClick={() => {
+                                    const topSitesSummary = topSites.slice(0, 5).map(s => `- ${s.domain} (${formatDuration(s.duration)}, ${s.category})`).join('\n');
+                                    const topSitesTodaySummary = topSitesToday.slice(0, 5).map(s => `- ${s.domain} (${formatDuration(s.duration)}, ${s.category})`).join('\n');
+
+                                    const context = `Here is my productivity data for today from the extension:
+- Focus Score: ${stats.focusScore}%
+- Study Time: ${formatDuration(stats.learningTime)}
+- Distracted Time: ${formatDuration(stats.distractionTime)}
+- Mixed Time: ${formatDuration(stats.mixedTime)}
+
+Top Visited Sites (Today):
+${topSitesTodaySummary}
+
+Top Visited Sites (Last 7 Days):
+${topSitesSummary}
+
+Can you help me improve my focus based on this?`;
+
+                                    window.dispatchEvent(new CustomEvent('open-chatbot-with-context', {
+                                        detail: { context }
+                                    }));
+                                }}
+                            >
+                                <MessageSquare className="w-5 h-5" />
+                                Ask Study Coach
+                            </Button>
+                        )}
+                        <Button size="lg" className="gap-2" onClick={() => window.open('/extension.zip', '_blank')}>
+                            <Chrome className="w-5 h-5" />
+                            Download Extension
+                        </Button>
+                    </div>
                 </div>
 
                 {!isConnected && (
@@ -274,44 +335,91 @@ export default function StudentExtension() {
                         <Card className="lg:col-span-1">
                             <CardHeader>
                                 <CardTitle>Top Sites</CardTitle>
-                                <CardDescription>Your most visited domains this week.</CardDescription>
+                                <CardDescription>Most visited domains.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ScrollArea className="h-[300px] pr-4">
-                                    <div className="space-y-4">
-                                        {topSites.map((site, index) => (
-                                            <div key={site.domain} className="flex items-center justify-between">
-                                                <div className="flex items-start gap-2">
-                                                    <div className="flex bg-muted h-9 w-9 items-center justify-center rounded-sm border shrink-0">
-                                                        <img
-                                                            src={`https://www.google.com/s2/favicons?domain=${site.domain}&sz=64`}
-                                                            alt=""
-                                                            className="h-5 w-5 opacity-80"
-                                                            onError={(e) => (e.currentTarget.src = "")} // Fallback if no favicon
-                                                        />
+                                <Tabs defaultValue="today" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                                        <TabsTrigger value="today">Today</TabsTrigger>
+                                        <TabsTrigger value="week">Week</TabsTrigger>
+                                    </TabsList>
+
+                                    <TabsContent value="today">
+                                        <ScrollArea className="h-[300px] pr-4">
+                                            <div className="space-y-4">
+                                                {topSitesToday.map((site, index) => (
+                                                    <div key={site.domain} className="flex items-center justify-between">
+                                                        <div className="flex items-start gap-2">
+                                                            <div className="flex bg-muted h-9 w-9 items-center justify-center rounded-sm border shrink-0">
+                                                                <img
+                                                                    src={`https://www.google.com/s2/favicons?domain=${site.domain}&sz=64`}
+                                                                    alt=""
+                                                                    className="h-5 w-5 opacity-80"
+                                                                    onError={(e) => (e.currentTarget.src = "")}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium leading-none truncate max-w-[120px]">{site.domain}</p>
+                                                                <p className="text-xs text-muted-foreground mt-1 capitalize">{site.category}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <span className={`text-sm font-semibold ${site.category === 'Learning' ? 'text-green-600' :
+                                                                site.category === 'Distraction' ? 'text-red-500' :
+                                                                    site.category === 'Mixed' ? 'text-yellow-600' : 'text-foreground'
+                                                                }`}>
+                                                                {formatDuration(site.duration)}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium leading-none truncate max-w-[120px]">{site.domain}</p>
-                                                        <p className="text-xs text-muted-foreground mt-1 capitalize">{site.category}</p>
+                                                ))}
+                                                {topSitesToday.length === 0 && (
+                                                    <div className="text-center text-muted-foreground py-8">
+                                                        No data for today.
                                                     </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <span className={`text-sm font-semibold ${site.category === 'Learning' ? 'text-green-600' :
-                                                        site.category === 'Distraction' ? 'text-red-500' :
-                                                            site.category === 'Mixed' ? 'text-yellow-600' : 'text-foreground'
-                                                        }`}>
-                                                        {formatDuration(site.duration)}
-                                                    </span>
-                                                </div>
+                                                )}
                                             </div>
-                                        ))}
-                                        {topSites.length === 0 && (
-                                            <div className="text-center text-muted-foreground py-8">
-                                                Start browsing to see data here.
+                                        </ScrollArea>
+                                    </TabsContent>
+
+                                    <TabsContent value="week">
+                                        <ScrollArea className="h-[300px] pr-4">
+                                            <div className="space-y-4">
+                                                {topSites.map((site, index) => (
+                                                    <div key={site.domain} className="flex items-center justify-between">
+                                                        <div className="flex items-start gap-2">
+                                                            <div className="flex bg-muted h-9 w-9 items-center justify-center rounded-sm border shrink-0">
+                                                                <img
+                                                                    src={`https://www.google.com/s2/favicons?domain=${site.domain}&sz=64`}
+                                                                    alt=""
+                                                                    className="h-5 w-5 opacity-80"
+                                                                    onError={(e) => (e.currentTarget.src = "")}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium leading-none truncate max-w-[120px]">{site.domain}</p>
+                                                                <p className="text-xs text-muted-foreground mt-1 capitalize">{site.category}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <span className={`text-sm font-semibold ${site.category === 'Learning' ? 'text-green-600' :
+                                                                site.category === 'Distraction' ? 'text-red-500' :
+                                                                    site.category === 'Mixed' ? 'text-yellow-600' : 'text-foreground'
+                                                                }`}>
+                                                                {formatDuration(site.duration)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {topSites.length === 0 && (
+                                                    <div className="text-center text-muted-foreground py-8">
+                                                        No data for this week.
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-                                </ScrollArea>
+                                        </ScrollArea>
+                                    </TabsContent>
+                                </Tabs>
                             </CardContent>
                         </Card>
                     </div>

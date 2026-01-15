@@ -8,35 +8,26 @@ import { ChatMessage, EDUCATION_ONLY_RESPONSE, isEducationalPrompt, ProfileSigna
 import { cn } from '@/lib/utils';
 import { QuizGenerator } from './QuizGenerator';
 
-const STORAGE_KEY = 'spark-chat-history';
+const STORAGE_KEY = 'study-coach-chat-history-v2';
 const OPEN_STATE_KEY = 'spark-chat-open';
 
 const defaultProfileSignals: ProfileSignals = {
-  recentSubjects: ['Data Structures', 'DBMS', 'Machine Learning'],
-  mastery: {
-    'Data Structures': 62,
-    DBMS: 54,
-    'Machine Learning': 78,
-    'Operating Systems': 48,
-  },
-  weakConcepts: ['Normalization', 'Dynamic Programming transitions', 'Thread synchronization'],
-  quizAccuracy: 74,
-  dailyPlan: 'Revise DP patterns + 30m DBMS concepts',
-  nextSession: 'DSA Deep Dive at 6:00 PM',
-  timetableEntry: 'Tonight: DSA sprint + Quiz review',
-  bookmarks: ['DP Ultimate Guide', 'DBMS Cheatsheet'],
-  recommendedVideos: ['Top 10 System Design Questions', 'DP in 20 minutes'],
-  courseProgress: {
-    'Adaptive DSA': '62% complete',
-    'ML Foundations': '81% complete',
-    'Career Launchpad': '45% complete',
-  },
+  recentSubjects: [],
+  mastery: {},
+  weakConcepts: [],
+  quizAccuracy: 0,
+  dailyPlan: '',
+  nextSession: '',
+  timetableEntry: '',
+  bookmarks: [],
+  recommendedVideos: [],
+  courseProgress: {},
 };
 
 const introMessage: ChatMessage = {
   role: 'assistant',
   content:
-    'Hey there! I am Study Coach. I can help with concepts, study plans, quizzes, and prep strategies—all within your syllabus.',
+    'Hey there! I am your Study Coach. I can help with concepts, study plans, quizzes, prep strategies, and more educational doubts to help you manage your time better.',
   timestamp: Date.now(),
 };
 
@@ -57,7 +48,7 @@ export function ChatbotWidget() {
   const isHidden = hiddenPaths.includes(location.pathname);
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = sessionStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
         return JSON.parse(stored) as ChatMessage[];
@@ -85,12 +76,26 @@ export function ChatbotWidget() {
   }, [user]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
   useEffect(() => {
     sessionStorage.setItem(OPEN_STATE_KEY, JSON.stringify(isOpen));
   }, [isOpen]);
+
+  // Listen for external commands to open chat with context
+  useEffect(() => {
+    const handleOpenWithContext = (e: CustomEvent<{ context: string }>) => {
+      setIsOpen(true);
+      setInput(e.detail.context);
+      // Optional: Focus logic could go here
+    };
+
+    window.addEventListener('open-chatbot-with-context', handleOpenWithContext as EventListener);
+    return () => {
+      window.removeEventListener('open-chatbot-with-context', handleOpenWithContext as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     if (!scrollRef.current || !isOpen) return;

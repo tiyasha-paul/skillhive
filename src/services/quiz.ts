@@ -202,13 +202,13 @@ export function getSubjectsForBranchSemester(branch: string, year: string, semes
   if (year === '1st Year') {
     return SUBJECT_LIST[year][semester as keyof typeof SUBJECT_LIST['1st Year']] || [];
   }
-  
+
   const yearData = SUBJECT_LIST[year as keyof typeof SUBJECT_LIST];
   if (!yearData || typeof yearData !== 'object') return [];
-  
+
   const branchData = yearData[branch as keyof typeof yearData];
   if (!branchData || typeof branchData !== 'object') return [];
-  
+
   return branchData[semester as keyof typeof branchData] || [];
 }
 
@@ -272,9 +272,10 @@ STRICT RULES (FOLLOW EVERY POINT CAREFULLY)
    - 4 medium
    - 2 hard
 
-5. IMPORTANT:  
    - Questions must be ORIGINAL (do not copy online sources).  
-   - They must test **conceptual understanding**, not just memory.  
+   - They must test **conceptual understanding**, not just memory.
+   - **Enclose ALL mathematical expressions, symbols, and equations in single dollar signs ($) for inline math or double dollar signs ($$) for block math.** Example: 'Here is $\\\\nabla \\\\times \\\\mathbf{E}$'.
+   - **CRITICAL FOR JSON:** You MUST escape all backslashes in your LaTeX commands. For example, use '\\\\nabla' instead of '\\nabla', and '\\\\approx' instead of '\\approx'. If you do not escape them, the JSON will be invalid.
 
 6. VERY IMPORTANT:  
    Output MUST be **valid JSON ONLY** — no commentary, no notes, no markdown, no code blocks.
@@ -327,10 +328,10 @@ STRICT RULES (FOLLOW EVERY POINT CAREFULLY)
 
   try {
     const response = await generateGeminiText(prompt);
-    
+
     // Clean the response - remove markdown code blocks if present
     let cleanedResponse = response.trim();
-    
+
     // Remove markdown code blocks
     if (cleanedResponse.includes('```json')) {
       const jsonMatch = cleanedResponse.match(/```json\s*([\s\S]*?)\s*```/);
@@ -347,13 +348,13 @@ STRICT RULES (FOLLOW EVERY POINT CAREFULLY)
         cleanedResponse = cleanedResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
       }
     }
-    
+
     // Try to extract JSON if there's extra text
     const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       cleanedResponse = jsonMatch[0];
     }
-    
+
     let quizData: QuizPackage;
     try {
       quizData = JSON.parse(cleanedResponse) as QuizPackage;
@@ -362,17 +363,17 @@ STRICT RULES (FOLLOW EVERY POINT CAREFULLY)
       console.error('Response received:', response.substring(0, 500));
       throw new Error('Invalid JSON response from AI. Please try again.');
     }
-    
+
     // Validate structure
     if (!quizData.questions || !Array.isArray(quizData.questions)) {
       throw new Error('Invalid quiz structure: Missing questions array');
     }
-    
+
     if (quizData.questions.length !== 10) {
       console.warn(`Expected 10 questions, got ${quizData.questions.length}`);
       // Still proceed if we have questions, but log a warning
     }
-    
+
     // Validate each question
     for (let i = 0; i < quizData.questions.length; i++) {
       const q = quizData.questions[i];
@@ -389,7 +390,7 @@ STRICT RULES (FOLLOW EVERY POINT CAREFULLY)
         throw new Error(`Invalid options at question ${i + 1}: All options A, B, C, D must be present`);
       }
     }
-    
+
     return quizData;
   } catch (error) {
     console.error('Error generating quiz:', error);

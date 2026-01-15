@@ -164,13 +164,7 @@ export default function StudentSettings() {
     updateSection('learning', { [key]: value });
   };
 
-  const handleChatbotChange = (key: keyof typeof settings.chatbot, value: string | boolean) => {
-    updateSection('chatbot', { [key]: value });
-  };
 
-  const handleJobsChange = (key: keyof typeof settings.jobs, value: string) => {
-    updateSection('jobs', { [key]: value });
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -421,108 +415,7 @@ export default function StudentSettings() {
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Chatbot & Job Preferences</CardTitle>
-              <CardDescription>Control assistant visibility and job signals</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <p className="text-sm font-medium">Enable chatbot</p>
-                  <p className="text-xs text-muted-foreground">Toggles conversational helper</p>
-                </div>
-                <Switch
-                  checked={settings.chatbot.enabled}
-                  onCheckedChange={(checked) => handleChatbotChange('enabled', checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <p className="text-sm font-medium">Allow learning data</p>
-                  <p className="text-xs text-muted-foreground">Lets chatbot personalize answers</p>
-                </div>
-                <Switch
-                  checked={settings.chatbot.useLearningData}
-                  onCheckedChange={(checked) => handleChatbotChange('useLearningData', checked)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Chatbot tone</Label>
-                <Select
-                  value={settings.chatbot.tone}
-                  onValueChange={(value: any) => handleChatbotChange('tone', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select tone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="formal">Formal</SelectItem>
-                    <SelectItem value="casual">Casual</SelectItem>
-                    <SelectItem value="teacher">Teacher-like</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label>Preferred job locations</Label>
-                <Input
-                  value={settings.jobs.locations}
-                  onChange={(e) => handleJobsChange('locations', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Preferred roles</Label>
-                <Input
-                  value={settings.jobs.roles}
-                  onChange={(e) => handleJobsChange('roles', e.target.value)}
-                />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Internship / Full-time</Label>
-                  <Select
-                    value={settings.jobs.preference}
-                    onValueChange={(value: any) => handleJobsChange('preference', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select preference" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Internship">Internship</SelectItem>
-                      <SelectItem value="Full-time">Full-time</SelectItem>
-                      <SelectItem value="Both">Both</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Salary range</Label>
-                  <Input
-                    value={settings.jobs.salary}
-                    onChange={(e) => handleJobsChange('salary', e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Work type</Label>
-                <Select
-                  value={settings.jobs.workType}
-                  onValueChange={(value: any) => handleJobsChange('workType', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Remote">Remote</SelectItem>
-                    <SelectItem value="Hybrid">Hybrid</SelectItem>
-                    <SelectItem value="On-site">On-site</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+
 
         <div className="grid gap-6 lg:grid-cols-1">
           <Card className={`border-blue-500/20 bg-blue-50/10 dark:bg-blue-900/10 ${!extensionDetected ? 'opacity-80' : ''}`}>

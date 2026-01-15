@@ -12,10 +12,54 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
 interface QuizGeneratorProps {
   onClose?: () => void;
 }
+
+// Helper to render text with LaTeX
+const LatexText = ({ text }: { text: string }) => {
+  if (!text) return null;
+
+  // Split by $ delimiters
+  const parts = text.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g);
+
+  return (
+    <span>
+      {parts.map((part, index) => {
+        if (part.startsWith('$$') && part.endsWith('$$')) {
+          // Block math
+          const math = part.slice(2, -2);
+          try {
+            const html = katex.renderToString(math, { displayMode: true, throwOnError: false });
+            return <span key={index} dangerouslySetInnerHTML={{ __html: html }} className="block my-2" />;
+          } catch (e) {
+            return <span key={index}>{part}</span>;
+          }
+        } else if (part.startsWith('$') && part.endsWith('$')) {
+          // Inline math
+          const math = part.slice(1, -1);
+          try {
+            const html = katex.renderToString(math, { displayMode: false, throwOnError: false });
+            return <span key={index} dangerouslySetInnerHTML={{ __html: html }} />;
+          } catch (e) {
+            return <span key={index}>{part}</span>;
+          }
+        } else if (part.includes('\\')) {
+          // Fallback: If no delimiters but backslashes exist, try to detect simple latex like \nabla or \textbf{}
+          // This is risky for normal text, but common in bad AI output.
+          // For now, let's strictly rely on delimiters but maybe handle common un-delimited cases if needed.
+          // Given the updated prompt, we rely on delimiters.
+          // However, for existing quizzes or "random stuff", we might want to just render text.
+          return <span key={index}>{part}</span>;
+        }
+        return <span key={index}>{part}</span>;
+      })}
+    </span>
+  );
+};
 
 export function QuizGenerator({ onClose }: QuizGeneratorProps) {
   const [branch, setBranch] = useState<string>('');
@@ -244,7 +288,7 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <CardTitle className="text-base">
-                          Question {index + 1}: {question.question}
+                          Question {index + 1}: <LatexText text={question.question} />
                         </CardTitle>
                         <Badge variant={isCorrect ? 'default' : 'destructive'}>
                           {isCorrect ? <CheckCircle2 className="h-4 w-4 mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
@@ -274,7 +318,7 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
                             >
                               <div className="flex items-center gap-2">
                                 <span className="font-semibold">{key}.</span>
-                                <span>{value}</span>
+                                <LatexText text={value} />
                                 {isCorrectOption && <CheckCircle2 className="h-4 w-4 text-green-600 ml-auto" />}
                                 {isSelected && !isCorrectOption && <XCircle className="h-4 w-4 text-red-600 ml-auto" />}
                               </div>
@@ -284,7 +328,7 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
                       </div>
                       <div className="p-3 bg-muted rounded-lg">
                         <p className="text-sm font-medium mb-1">Explanation:</p>
-                        <p className="text-sm text-muted-foreground">{question.explanation}</p>
+                        <p className="text-sm text-muted-foreground"><LatexText text={question.explanation} /></p>
                       </div>
                     </CardContent>
                   </Card>
@@ -344,7 +388,7 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">{question.question}</CardTitle>
+                <CardTitle className="text-lg"><LatexText text={question.question} /></CardTitle>
                 <CardDescription>
                   Topic: {question.topic} · Difficulty: <Badge variant="outline">{question.difficulty}</Badge>
                 </CardDescription>
@@ -363,7 +407,7 @@ export function QuizGenerator({ onClose }: QuizGeneratorProps) {
                       )}
                     >
                       <span className="font-semibold mr-2">{key}.</span>
-                      {value}
+                      <LatexText text={value} />
                     </button>
                   ))}
                 </div>

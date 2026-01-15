@@ -12,7 +12,6 @@ export type ActivityType =
   | 'video_watched'
   | 'timetable_session_completed'
   | 'job_saved'
-  | 'practice_viewed'
   | 'resume_analyzed';
 
 const BASE_STORAGE_KEY = 'student_activity';

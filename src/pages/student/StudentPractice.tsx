@@ -82,7 +82,7 @@ export default function StudentPractice() {
 
   useEffect(() => {
     // Record activity when viewing practice page
-    recordActivity('practice_viewed');
+    // Activity recording removed per user request
     window.dispatchEvent(new CustomEvent('activity-updated'));
 
     loadAnalytics();

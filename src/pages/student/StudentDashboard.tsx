@@ -163,7 +163,7 @@ export default function StudentDashboard() {
     const today = new Date().toISOString().split('T')[0];
     const lastDashboardView = localStorage.getItem(`dashboard_view_${today}`);
     if (!lastDashboardView) {
-      recordActivity('practice_viewed'); // Using practice_viewed as general activity
+      // Activity recording removed
       localStorage.setItem(`dashboard_view_${today}`, 'true');
     }
 
@@ -343,7 +343,7 @@ export default function StudentDashboard() {
                   <div className="space-y-1">
                     <h2 className="text-2xl font-bold tracking-tight">Personalized Recommendations</h2>
                     <p className="text-sm text-muted-foreground">
-                      Data is shown based on the latest quizzes taken and the top 5 data is shown.
+                      Based on your latest quizzes, showing top 5 results. Click the info button <Info className="inline h-3 w-3 mb-0.5" /> for a detailed view of all topics.
                     </p>
                   </div>
                 </div>

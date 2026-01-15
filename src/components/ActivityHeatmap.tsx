@@ -1,8 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getActivityHeatmapData, getActivityStreak, getLongestActivityStreak, getTotalActivityCount } from '@/services/activityTracker';
-import { Calendar } from 'lucide-react';
+import {
+  getActivityHeatmapData,
+  getActivityStreak,
+  getLongestActivityStreak,
+  getTotalActivityCount,
+  getActivityForDate,
+  type ActivityRecord
+} from '@/services/activityTracker';
+import { Calendar, Clock, Trophy } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface HeatmapCell {
   date: string;
@@ -16,6 +24,8 @@ export function ActivityHeatmap() {
   const [longestStreak, setLongestStreak] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [hoveredCell, setHoveredCell] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedActivityRecord, setSelectedActivityRecord] = useState<ActivityRecord | null>(null);
 
   useEffect(() => {
     loadHeatmapData();
@@ -29,6 +39,14 @@ export function ActivityHeatmap() {
       window.removeEventListener('activity-updated', handleActivityUpdate);
     };
   }, []);
+
+  // Update selected record when selectedDate changes or data reloads
+  useEffect(() => {
+    if (selectedDate) {
+      const record = getActivityForDate(selectedDate);
+      setSelectedActivityRecord(record);
+    }
+  }, [selectedDate, totalCount]); // update when count changes too
 
   const loadHeatmapData = () => {
     const data = getActivityHeatmapData();
@@ -119,107 +137,160 @@ export function ActivityHeatmap() {
     });
   };
 
+  const formatActivityType = (type: string) => {
+    return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
   return (
     <Card className="border-none shadow-none bg-transparent">
-      <CardHeader className="px-0 pt-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              Activity Heatmap
-            </CardTitle>
-            <CardDescription>
-              {totalCount} activit{totalCount !== 1 ? 'ies' : 'y'} in the last year
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col items-end">
-              <span className="text-sm font-bold text-primary">{streak} Days</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                Current Streak
-              </span>
+      <div className="flex flex-col lg:flex-row">
+        {/* Left Column: Header + Heatmap */}
+        <div className="flex-1 pr-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Activity Heatmap
+              </CardTitle>
+              <CardDescription>
+                {totalCount} activit{totalCount !== 1 ? 'ies' : 'y'} in the last year
+              </CardDescription>
             </div>
-            <div className="flex flex-col items-end">
-              <span className="text-sm font-bold text-primary">{longestStreak} Days</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                Longest Streak
-              </span>
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="px-0 pb-0 overflow-hidden">
-        <div className="flex flex-col gap-0.5 mt-2">
-          {/* Month Labels */}
-          <div className="relative h-5 text-[10px] text-muted-foreground ml-8 w-full">
-            {monthLabels.map((label, i) => (
-              <div
-                key={i}
-                style={{ 
-                  position: 'absolute',
-                  left: `${label.index * 11}px` 
-                }}
-                className="transform -translate-x-1/2"
-              >
-                {label.month}
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col items-end">
+                <span className="text-sm font-bold text-primary">{streak} Days</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                  Current Streak
+                </span>
               </div>
-            ))}
+              <div className="flex flex-col items-end">
+                <span className="text-sm font-bold text-primary">{longestStreak} Days</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                  Longest Streak
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div className="flex gap-2">
-            {/* Day Labels */}
-            <div className="flex flex-col gap-[3px] py-1 text-[9px] text-muted-foreground w-6 leading-none">
-              <div className="h-2"></div>
-              <div className="h-2">Mon</div>
-              <div className="h-2"></div>
-              <div className="h-2">Wed</div>
-              <div className="h-2"></div>
-              <div className="h-2">Fri</div>
-              <div className="h-2"></div>
+          <div className="flex flex-col gap-0.5">
+            {/* Month Labels */}
+            <div className="relative h-5 text-[10px] text-muted-foreground ml-8 w-full">
+              {monthLabels.map((label, i) => (
+                <div
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    left: `${label.index * 11}px`
+                  }}
+                  className="transform -translate-x-1/2"
+                >
+                  {label.month}
+                </div>
+              ))}
             </div>
 
-            {/* Heatmap Grid */}
-            <div className="flex gap-[3px]">
-              <TooltipProvider>
-                {weeksData.map((week, weekIndex) => (
-                  <div key={weekIndex} className="flex flex-col gap-[3px]">
-                    {week.map((cell, dayIndex) => {
-                      if (!cell.date) return <div key={`${weekIndex}-${dayIndex}`} className="w-2 h-2 rounded-[1px] bg-transparent" />;
+            <div className="flex gap-2">
+              {/* Day Labels */}
+              <div className="flex flex-col gap-[3px] py-1 text-[9px] text-muted-foreground w-6 leading-none">
+                <div className="h-2"></div>
+                <div className="h-2">Mon</div>
+                <div className="h-2"></div>
+                <div className="h-2">Wed</div>
+                <div className="h-2"></div>
+                <div className="h-2">Fri</div>
+                <div className="h-2"></div>
+              </div>
 
-                      return (
-                        <Tooltip key={`${weekIndex}-${dayIndex}`}>
-                          <TooltipTrigger asChild>
-                            <div
-                              className={`w-2 h-2 rounded-[1px] cursor-pointer transition-colors ${getColorForLevel(cell.level)} shadow-sm`}
-                              onMouseEnter={() => setHoveredCell(cell.date)}
-                              onMouseLeave={() => setHoveredCell(null)}
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent className="p-2 text-[10px]">
-                            <p className="font-bold">{cell.count > 0 ? `${cell.count} activities` : 'No activity'}</p>
-                            <p className="text-muted-foreground">{formatDate(cell.date)}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
-                  </div>
-                ))}
-              </TooltipProvider>
+              {/* Heatmap Grid */}
+              <div className="flex gap-[3px] pb-2">
+                <TooltipProvider>
+                  {weeksData.map((week, weekIndex) => (
+                    <div key={weekIndex} className="flex flex-col gap-[3px]">
+                      {week.map((cell, dayIndex) => {
+                        if (!cell.date) return <div key={`${weekIndex}-${dayIndex}`} className="w-2 h-2 rounded-[1px] bg-transparent" />;
+
+                        const isSelected = selectedDate === cell.date;
+
+                        return (
+                          <Tooltip key={`${weekIndex}-${dayIndex}`}>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={`w-2 h-2 rounded-[1px] cursor-pointer transition-all ${getColorForLevel(cell.level)} ${isSelected ? 'ring-2 ring-primary ring-offset-1 z-10' : ''}`}
+                                onMouseEnter={() => setHoveredCell(cell.date)}
+                                onMouseLeave={() => setHoveredCell(null)}
+                                onClick={() => setSelectedDate(cell.date)}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent className="p-2 text-[10px]">
+                              <p className="font-bold">{cell.count > 0 ? `${cell.count} activities` : 'No activity'}</p>
+                              <p className="text-muted-foreground">{formatDate(cell.date)}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </TooltipProvider>
+              </div>
             </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center justify-end gap-1.5 mt-4 text-[10px] text-muted-foreground pr-4">
+            <span>Less</span>
+            <div className="flex gap-[2px]">
+              {[0, 1, 2, 3, 4].map(l => (
+                <div key={l} className={`w-2 h-2 rounded-[1px] ${getColorForLevel(l)}`} />
+              ))}
+            </div>
+            <span>More</span>
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center justify-end gap-1.5 mt-4 text-[10px] text-muted-foreground">
-          <span>Less</span>
-          <div className="flex gap-[2px]">
-            {[0, 1, 2, 3, 4].map(l => (
-              <div key={l} className={`w-2 h-2 rounded-[1px] ${getColorForLevel(l)}`} />
-            ))}
+        {/* Right Column: Activity History - taking full height */}
+        <div className="w-full lg:w-48 border-l pl-0 lg:pl-6 pt-4 lg:pt-0 border-border/50 flex flex-col">
+          <div className="bg-muted/30 rounded-lg p-3 w-full border border-border/50 flex flex-col h-[210px] overflow-hidden">
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/50 shrink-0">
+              <Clock className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold text-sm">Activity History</h3>
+            </div>
+
+            {selectedDate ? (
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="mb-2 flex justify-between items-center shrink-0">
+                  <span className="text-xs font-medium">{formatDate(selectedDate)}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {selectedActivityRecord?.count || 0} activities
+                  </span>
+                </div>
+
+                <ScrollArea className="flex-1 pr-3">
+                  {selectedActivityRecord && selectedActivityRecord.activities.length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedActivityRecord.activities.map((activity, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-xs">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                          <span className="text-muted-foreground break-words">{formatActivityType(activity)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground text-xs text-center p-2 opacity-70">
+                      <p>No activity recorded</p>
+                      <p>on this day.</p>
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-xs text-center p-4 opacity-70">
+                <Trophy className="h-8 w-8 mb-2 opacity-20" />
+                <p>Click on a square in the heatmap to view details.</p>
+              </div>
+            )}
           </div>
-          <span>More</span>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

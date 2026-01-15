@@ -22,9 +22,11 @@ import {
   getQuizResults,
   getRecentWeakAreas,
   getRecentStrongAreas,
+  getRecentAverageAreas,
   groupTopicsBySubject,
   type WeakArea,
-  type StrongArea
+  type StrongArea,
+  type AverageArea
 } from '@/services/quizResults';
 import { type YouTubeVideo } from '@/services/youtube';
 import { youtubeQueue } from '@/services/youtubeQueue';
@@ -84,8 +86,10 @@ export default function StudentDashboard() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [videosExpanded, setVideosExpanded] = useState(false);
   const [showAllStrengths, setShowAllStrengths] = useState(false);
+  const [showAllAverage, setShowAllAverage] = useState(false);
   const [showAllWeaknesses, setShowAllWeaknesses] = useState(false);
   const [allStrengths, setAllStrengths] = useState<Record<string, StrongArea[]>>({});
+  const [allAverage, setAllAverage] = useState<Record<string, AverageArea[]>>({});
   const [allWeaknesses, setAllWeaknesses] = useState<Record<string, WeakArea[]>>({});
   useEffect(() => {
     // Load user profile to get name
@@ -215,8 +219,10 @@ export default function StudentDashboard() {
 
     // Load detailed stats for "All Topics" view
     const allStrengthsData = getRecentStrongAreas(100);
+    const allAverageData = getRecentAverageAreas(100);
     const allWeaknessesData = getRecentWeakAreas(100);
     setAllStrengths(groupTopicsBySubject(allStrengthsData));
+    setAllAverage(groupTopicsBySubject(allAverageData));
     setAllWeaknesses(groupTopicsBySubject(allWeaknessesData));
 
     setLoadingVideos(true);
@@ -345,9 +351,9 @@ export default function StudentDashboard() {
 
 
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-6">
                   {/* Strong Topics */}
-                  <Card className="border-none shadow-sm bg-gradient-to-br from-green-50/50 to-transparent dark:from-green-950/10">
+                  <Card className="border-none shadow-sm bg-gradient-to-br from-green-50/50 to-transparent dark:from-green-950/10 h-full">
                     <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
                       <CardTitle className="text-base flex items-center gap-2 text-green-700 dark:text-green-400">
                         <Award className="h-4 w-4" />
@@ -405,8 +411,67 @@ export default function StudentDashboard() {
                     </CardContent>
                   </Card>
 
+                  {/* Average Topics */}
+                  <Card className="border-none shadow-sm bg-gradient-to-br from-yellow-50/50 to-transparent dark:from-yellow-950/10 h-full">
+                    <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+                      <CardTitle className="text-base flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
+                        <Target className="h-4 w-4" />
+                        Developing Skills
+                      </CardTitle>
+                      <Dialog open={showAllAverage} onOpenChange={setShowAllAverage}>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-yellow-700/50 hover:text-yellow-700 hover:bg-yellow-100/50">
+                            <Info className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Developing Skills</DialogTitle>
+                            <DialogDescription>
+                              Topics with 60-79% accuracy. You're getting there!
+                            </DialogDescription>
+                          </DialogHeader>
+                          <ScrollArea className="h-[60vh] pr-4">
+                            <div className="space-y-6">
+                              {Object.entries(allAverage).length > 0 ? (
+                                Object.entries(allAverage).map(([subject, areas]) => (
+                                  <div key={subject} className="space-y-2">
+                                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">{subject}</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                      {areas.map(area => (
+                                        <Badge key={area.topic} variant="secondary" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-none">
+                                          {area.topic}
+                                          <span className="ml-1 opacity-60 text-[10px]">{Math.round(area.accuracy)}%</span>
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-center text-muted-foreground py-8">No developing skills yet.</p>
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </DialogContent>
+                      </Dialog>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {insights.averageAreas.length > 0 ? (
+                          insights.averageAreas.map(s => (
+                            <Badge key={s} variant="secondary" className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-none">
+                              {s}
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">No topics in this range yet.</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   {/* Weak Topics */}
-                  <Card className="border-none shadow-sm bg-gradient-to-br from-red-50/50 to-transparent dark:from-red-950/10">
+                  <Card className="border-none shadow-sm bg-gradient-to-br from-red-50/50 to-transparent dark:from-red-950/10 h-full">
                     <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
                       <CardTitle className="text-base flex items-center gap-2 text-red-700 dark:text-red-400">
                         <AlertCircle className="h-4 w-4" />

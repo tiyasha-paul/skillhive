@@ -6,9 +6,11 @@ import {
   getStrongAreas,
   getRecentWeakAreas,
   getRecentStrongAreas,
+  getRecentAverageAreas,
   getPerformanceMetrics,
   getSubjectPerformance,
   type WeakArea,
+  type AverageArea,
   type PerformanceMetrics,
   type SubjectPerformance,
 } from './quizResults';
@@ -32,6 +34,7 @@ export interface AdaptiveLearningInsights {
   recommendedDifficulty: 'easy' | 'medium' | 'hard';
   learningPace: 'slow' | 'moderate' | 'fast';
   focusAreas: string[];
+  averageAreas: string[];
   strengths: string[];
   studyPlan: {
     dailyGoal: number; // minutes
@@ -72,6 +75,11 @@ export function analyzeLearnerPerformance(): AdaptiveLearningInsights {
   const strengths = getRecentStrongAreas(5)
     .map(area => `${area.topic} (${area.subject})`);
 
+  // Identify average areas (topics with 60-79% accuracy)
+  // Use recent average areas (top 5 prioritized by latest quiz)
+  const averageAreas = getRecentAverageAreas(5)
+    .map(area => `${area.topic} (${area.subject})`);
+
   // Generate study plan
   const studyPlan = generateStudyPlan(metrics, weakAreas, subjectPerformance);
 
@@ -82,6 +90,7 @@ export function analyzeLearnerPerformance(): AdaptiveLearningInsights {
     recommendedDifficulty,
     learningPace,
     focusAreas,
+    averageAreas,
     strengths,
     studyPlan,
     recommendations,
@@ -340,6 +349,7 @@ function getDefaultRecommendations(): AdaptiveLearningInsights {
     recommendedDifficulty: 'medium',
     learningPace: 'moderate',
     focusAreas: [],
+    averageAreas: [],
     strengths: [],
     studyPlan: {
       dailyGoal: 60,

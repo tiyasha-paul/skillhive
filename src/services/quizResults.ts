@@ -356,6 +356,46 @@ export function getRecentStrongAreas(limit: number = 5): StrongArea[] {
   return strongAreas.slice(0, limit);
 }
 
+// Get average areas (60-79% accuracy)
+export interface AverageArea {
+  topic: string;
+  subject: string;
+  accuracy: number;
+  averageTime: number;
+  totalAttempts: number;
+}
+
+// Get recent average areas (prioritizing latest quizzes)
+export function getRecentAverageAreas(limit: number = 5): AverageArea[] {
+  const results = getQuizResults().sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+  const seenTopics = new Set<string>();
+  const averageAreas: AverageArea[] = [];
+
+  for (const result of results) {
+    if (averageAreas.length >= limit) break;
+
+    Object.entries(result.topicStats).forEach(([topic, stats]) => {
+      const normalizedTopic = topic.trim().toLowerCase();
+      const key = `${result.subject.trim()}::${normalizedTopic}`;
+
+      if (seenTopics.has(key)) return;
+      seenTopics.add(key);
+
+      const accuracy = stats.total > 0 ? (stats.correct / stats.total) * 100 : 0;
+      if (accuracy >= 60 && accuracy < 80) {
+        averageAreas.push({
+          topic: topic.trim(),
+          subject: result.subject.trim(),
+          accuracy,
+          averageTime: stats.avgTime || 0,
+          totalAttempts: stats.total,
+        });
+      }
+    });
+  }
+  return averageAreas.slice(0, limit);
+}
+
 export function getWeakAreas(): WeakArea[] {
   return getTopicPerformances()
     .filter(area => area.accuracy < 60 && area.totalAttempts >= 1) // At least 1 attempt

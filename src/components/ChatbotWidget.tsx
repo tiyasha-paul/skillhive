@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, MessageCircle, X, ArrowDown, FileQuestion, Send } from 'lucide-react';
+import Markdown from 'markdown-to-jsx';
 import { ChatMessage, EDUCATION_ONLY_RESPONSE, isEducationalPrompt, ProfileSignals, sendChatToAssistant } from '@/services/chatbot';
 import { cn } from '@/lib/utils';
 import { QuizGenerator } from './QuizGenerator';
@@ -256,7 +257,22 @@ export function ChatbotWidget() {
                           : 'rounded-bl-sm bg-muted text-foreground'
                       )}
                     >
-                      {message.content}
+                      {message.role === 'user' ? (
+                        message.content
+                      ) : (
+                        <Markdown
+                          options={{
+                            overrides: {
+                              ul: { props: { className: 'list-disc pl-4 mb-2' } },
+                              ol: { props: { className: 'list-decimal pl-4 mb-2' } },
+                              p: { props: { className: 'mb-2 last:mb-0' } },
+                            },
+                          }}
+                          className="prose prose-sm dark:prose-invert max-w-none break-words"
+                        >
+                          {String(message.content || '')}
+                        </Markdown>
+                      )}
                     </div>
                     <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                       {message.role === 'user' ? 'You' : 'Study Coach'} · {formatTime(message.timestamp)}

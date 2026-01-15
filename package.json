@@ -54,6 +54,7 @@
     "express": "^5.1.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.462.0",
+    "markdown-to-jsx": "^9.5.7",
     "next-themes": "^0.3.0",
     "pdfjs-dist": "^5.4.449",
     "react": "^18.3.1",

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, MessageCircle, X, ArrowDown, FileQuestion } from 'lucide-react';
+import { Loader2, MessageCircle, X, ArrowDown, FileQuestion, Send } from 'lucide-react';
 import { ChatMessage, EDUCATION_ONLY_RESPONSE, isEducationalPrompt, ProfileSignals, sendChatToAssistant } from '@/services/chatbot';
 import { cn } from '@/lib/utils';
 import { QuizGenerator } from './QuizGenerator';
@@ -36,7 +36,7 @@ const defaultProfileSignals: ProfileSignals = {
 const introMessage: ChatMessage = {
   role: 'assistant',
   content:
-    'Hey there! I am Spark AI Mentor. I can help with concepts, study plans, quizzes, and prep strategies—all within your syllabus.',
+    'Hey there! I am Study Coach. I can help with concepts, study plans, quizzes, and prep strategies—all within your syllabus.',
   timestamp: Date.now(),
 };
 
@@ -187,7 +187,7 @@ export function ChatbotWidget() {
         <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:0.1s]" />
         <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:0.2s]" />
       </div>
-      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Spark AI · typing</span>
+      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Study Coach · typing</span>
     </div>
   );
 
@@ -213,8 +213,7 @@ export function ChatbotWidget() {
         <div className="fixed bottom-6 right-6 z-50 flex w-[380px] max-h-[80vh] flex-col rounded-3xl border border-border bg-background shadow-2xl">
           <header className="flex items-center justify-between rounded-t-3xl border-b bg-primary px-4 py-3 text-primary-foreground">
             <div>
-              <p className="text-sm font-semibold">Spark AI Mentor</p>
-              <p className="text-xs text-primary-foreground/80">Education-only · Gemini powered</p>
+              <p className="text-sm font-semibold">Study Coach</p>
             </div>
             <Button
               size="icon"
@@ -227,20 +226,7 @@ export function ChatbotWidget() {
             </Button>
           </header>
 
-          <section className="border-b bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
-            <p className="font-semibold uppercase tracking-wide">Live profile signals</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <span className="rounded-full bg-background px-3 py-1 text-[11px] text-foreground">
-                Quiz accuracy · {profileSignals.quizAccuracy}%
-              </span>
-              <span className="rounded-full bg-background px-3 py-1 text-[11px] text-foreground">
-                Next · {profileSignals.nextSession}
-              </span>
-              <span className="rounded-full bg-background px-3 py-1 text-[11px] text-foreground">
-                Focus · {profileSignals.dailyPlan}
-              </span>
-            </div>
-          </section>
+
 
           <div className="relative flex-1 overflow-hidden flex flex-col">
             <div
@@ -268,7 +254,7 @@ export function ChatbotWidget() {
                       {message.content}
                     </div>
                     <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {message.role === 'user' ? 'You' : 'Spark AI'} · {formatTime(message.timestamp)}
+                      {message.role === 'user' ? 'You' : 'Study Coach'} · {formatTime(message.timestamp)}
                     </span>
                   </div>
                 ))}
@@ -290,51 +276,38 @@ export function ChatbotWidget() {
           </div>
 
           <footer className="border-t bg-background px-4 py-3 space-y-2">
-            <Button
-              variant="default"
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => setShowQuiz(true)}
-            >
-              <FileQuestion className="mr-2 h-4 w-4" />
-              Take Quiz
-            </Button>
+
             <div className="rounded-2xl border bg-muted/20 p-3">
               <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Ask about concepts, quizzes, or study plans
               </p>
-              <Textarea
-                disabled={isTyping}
-                placeholder="Type your question… (Shift+Enter for a new line)"
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    handleSend();
-                  }
-                }}
-                className="mt-2 min-h-[64px] resize-none"
-              />
+              <div className="mt-2 flex gap-2">
+                <Textarea
+                  disabled={isTyping}
+                  placeholder="Type your question… (Shift+Enter for a new line)"
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  className="min-h-[40px] resize-none flex-1 py-3"
+                />
+                <Button
+                  size="icon"
+                  className="h-auto w-10 shrink-0"
+                  onClick={handleSend}
+                  disabled={isTyping || !input.trim()}
+                >
+                  {isTyping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <span className="text-[10px] text-muted-foreground">
                   Education-only guardrails active. Powered by Google Gemini.
                 </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs text-muted-foreground"
-                    onClick={() => scrollToBottom()}
-                  >
-                    <ArrowDown className="mr-1 h-3 w-3" />
-                    Jump to latest
-                  </Button>
-                  {isTyping && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                  <Button size="sm" onClick={handleSend} disabled={isTyping || !input.trim()}>
-                    Send
-                  </Button>
-                </div>
               </div>
             </div>
           </footer>

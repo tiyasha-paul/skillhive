@@ -1,6 +1,7 @@
 const https = require('https');
+require('dotenv').config();
 
-const API_KEY = 'AIzaSyDW7hYwngS8hvp46IV3uFHuYNqKCoI9Cvg';
+const API_KEY = process.env.VITE_GEMINI_API_KEY;
 
 const models = [
     'gemini-2.0-flash',

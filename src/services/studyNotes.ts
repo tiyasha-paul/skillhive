@@ -1,6 +1,6 @@
 // Study Notes service with OpenRouter API integration
 
-const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENROUTER_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
 
@@ -41,13 +41,13 @@ export function getStudyNoteById(noteId: string): StudyNote | null {
 export function saveStudyNote(note: StudyNote): void {
   const notes = getStudyNotes();
   const existingIndex = notes.findIndex(n => n.id === note.id);
-  
+
   if (existingIndex >= 0) {
     notes[existingIndex] = { ...note, updatedAt: new Date().toISOString() };
   } else {
     notes.push({ ...note, id: crypto.randomUUID(), createdAt: new Date().toISOString() });
   }
-  
+
   localStorage.setItem(STORAGE_KEY_NOTES, JSON.stringify(notes));
 }
 
@@ -80,14 +80,14 @@ export function rateNote(noteId: string, rating: 'up' | 'down' | null): void {
     if (!note.userRating) {
       note.userRating = null;
     }
-    
+
     // Remove previous rating
     if (note.userRating === 'up') {
       note.rating.up = Math.max(0, note.rating.up - 1);
     } else if (note.userRating === 'down') {
       note.rating.down = Math.max(0, note.rating.down - 1);
     }
-    
+
     // Add new rating
     if (rating === 'up') {
       note.rating.up += 1;
@@ -98,7 +98,7 @@ export function rateNote(noteId: string, rating: 'up' | 'down' | null): void {
     } else {
       note.userRating = null;
     }
-    
+
     saveStudyNote(note);
   }
 }
@@ -112,27 +112,27 @@ export function searchStudyNotes(query: string, filters?: {
 }): StudyNote[] {
   const notes = getStudyNotes();
   const lowerQuery = query.toLowerCase();
-  
+
   return notes.filter(note => {
     // Text search
-    const matchesQuery = !query || 
+    const matchesQuery = !query ||
       note.title.toLowerCase().includes(lowerQuery) ||
       note.summary.toLowerCase().includes(lowerQuery) ||
       note.subject.toLowerCase().includes(lowerQuery) ||
       note.topics.some(topic => topic.toLowerCase().includes(lowerQuery));
-    
+
     // Filter by category
     const matchesCategory = !filters?.category || note.category === filters.category;
-    
+
     // Filter by stream
     const matchesStream = !filters?.stream || note.stream === filters.stream;
-    
+
     // Filter by semester
     const matchesSemester = !filters?.semester || note.semester === filters.semester;
-    
+
     // Filter by subject
     const matchesSubject = !filters?.subject || note.subject === filters.subject;
-    
+
     return matchesQuery && matchesCategory && matchesStream && matchesSemester && matchesSubject;
   });
 }
@@ -330,7 +330,7 @@ Return the JSON response now:`;
 function extractTopics(query: string, subject?: string): string[] {
   const topics: string[] = [];
   const lowerQuery = query.toLowerCase();
-  
+
   // Common topic keywords
   const topicKeywords = [
     'normalization', 'sql', 'erd', 'transaction', 'indexing',
@@ -340,17 +340,17 @@ function extractTopics(query: string, subject?: string): string[] {
     'thermodynamics', 'fluid', 'mechanics', 'heat', 'transfer',
     'circuit', 'signal', 'filter', 'amplifier', 'oscillator',
   ];
-  
+
   topicKeywords.forEach(keyword => {
     if (lowerQuery.includes(keyword)) {
       topics.push(keyword);
     }
   });
-  
+
   if (subject) {
     topics.push(subject);
   }
-  
+
   return topics.length > 0 ? topics : [query];
 }
 
@@ -381,11 +381,11 @@ export function createScrapeJob(
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  
+
   const jobs = getScrapeJobs();
   jobs.push(job);
   localStorage.setItem(STORAGE_KEY_JOBS, JSON.stringify(jobs));
-  
+
   return job;
 }
 
@@ -418,9 +418,9 @@ export async function processScrapeJob(jobId: string): Promise<StudyNote | null>
   const jobs = getScrapeJobs();
   const job = jobs.find(j => j.id === jobId);
   if (!job) return null;
-  
+
   updateScrapeJobStatus(jobId, 'processing');
-  
+
   try {
     const note = await generateStudyNote(
       job.query,
@@ -429,7 +429,7 @@ export async function processScrapeJob(jobId: string): Promise<StudyNote | null>
       job.semester,
       job.subject
     );
-    
+
     if (note) {
       saveStudyNote(note);
       updateScrapeJobStatus(jobId, 'completed', note.id);

@@ -1,7 +1,8 @@
+require('dotenv').config();
 const https = require('https');
 
-// Read the key from the .env file (mocked here for the script, but I will read the file content I just saw)
-const API_KEY = 'AIzaSyDW7hYwngS8hvp46IV3uFHuYNqKCoI9Cvg';
+// Read the key from the .env file
+const API_KEY = process.env.VITE_GEMINI_API_KEY;
 // Using gemini-2.0-flash-exp as configured in the app
 const MODEL = 'gemini-2.0-flash-exp';
 const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`;

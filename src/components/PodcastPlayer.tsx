@@ -59,7 +59,6 @@ export function PodcastPlayer({ episode, onClose }: PodcastPlayerProps) {
         throw new Error('Failed to get audio URL');
       }
 
-      const data = await response.json();
       setAudioUrl(data.audioUrl);
     } catch (err) {
       console.error('Error fetching audio:', err);

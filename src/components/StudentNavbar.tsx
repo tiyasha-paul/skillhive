@@ -72,75 +72,89 @@ export function StudentNavbar() {
     loadNotifications();
   };
 
+  // Navigation items configuration
+  const navItems = [
+    { label: 'Dashboard', path: '/student/dashboard' },
+    { label: 'Learning', path: '/student/learning' },
+    { label: 'Timetable', path: '/student/timetable' },
+    { label: 'Podcasts', path: '/student/podcasts' },
+    { label: 'Extension', path: '/student/extension' },
+  ];
+
   const isActive = (path: string) => location.pathname === path;
 
-  const navLinkClasses = (path: string) =>
+  const getNavLinkClass = (path: string) =>
     `text-sm font-medium transition-colors hover:text-primary ${isActive(path)
       ? 'text-primary font-bold'
       : 'text-slate-600 dark:text-slate-300'
     }`;
 
-  const NaviagtionItems = () => (
-    <>
-      <button onClick={() => navigate('/student/dashboard')} className={navLinkClasses('/student/dashboard')}>
-        Dashboard
-      </button>
-      <button onClick={() => navigate('/student/learning')} className={navLinkClasses('/student/learning')}>
-        Learning
-      </button>
-      <button onClick={() => navigate('/student/timetable')} className={navLinkClasses('/student/timetable')}>
-        Timetable
-      </button>
-      <button onClick={() => navigate('/student/podcasts')} className={navLinkClasses('/student/podcasts')}>
-        Podcasts
-      </button>
-      <button onClick={() => navigate('/student/extension')} className={navLinkClasses('/student/extension')}>
-        Extension
-      </button>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className={`flex items-center gap-1 ${navLinkClasses('/student/jobs')}`}>
-            Jobs <ChevronDown className="h-4 w-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => navigate('/student/jobs')}>Browse Jobs</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/student/jobs#saved')}>Saved Jobs</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/student/jobs#resume')}>Resume Analysis</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
-  );
-
   return (
-    <nav className="bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b sticky top-0 z-50 transition-colors duration-300">
+    <nav className="bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b sticky top-0 z-50 transition-colors duration-300 supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-950/60">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Left: Brand Logo & Mobile Menu */}
-          <div className="flex items-center gap-2">
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[280px] sm:w-[350px]">
-                <div className="flex flex-col gap-6 mt-8">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg">
-                      <GraduationCap className="text-white" size={20} />
+          <div className="flex items-center gap-4">
+            {/* Mobile Menu Trigger */}
+            <div className="md:hidden">
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="-ml-2">
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[280px] sm:w-[350px] p-0">
+                  <ScrollArea className="h-full py-6">
+                    <div className="flex items-center gap-2 px-6 mb-6">
+                      <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg">
+                        <GraduationCap className="text-white" size={20} />
+                      </div>
+                      <span className="text-xl font-bold tracking-tight">SkillHive</span>
                     </div>
-                    <span className="text-xl font-bold tracking-tight">SkillHive</span>
-                  </div>
-                  <div className="flex flex-col gap-4 items-start">
-                    <NaviagtionItems />
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
+                    <div className="flex flex-col gap-1 px-4">
+                      {navItems.map((item) => (
+                        <button
+                          key={item.path}
+                          onClick={() => {
+                            navigate(item.path);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors ${isActive(item.path)
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
 
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/student/dashboard')}>
+                      <div className="px-4 py-2 mt-2">
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Career</h4>
+                        <button
+                          onClick={() => {
+                            navigate('/student/jobs');
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-md transition-colors ${isActive('/student/jobs')
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            }`}
+                        >
+                          Jobs & Internships
+                        </button>
+                      </div>
+                    </div>
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Desktop Logo */}
+            <div
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => navigate('/student/dashboard')}
+            >
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg">
                 <GraduationCap className="text-white" size={20} />
               </div>
@@ -150,7 +164,28 @@ export function StudentNavbar() {
 
           {/* Center: Navigation Links (Desktop) */}
           <div className="hidden md:flex items-center gap-6">
-            <NaviagtionItems />
+            {navItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={getNavLinkClass(item.path)}
+              >
+                {item.label}
+              </button>
+            ))}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className={`flex items-center gap-1 ${getNavLinkClass('/student/jobs')}`}>
+                  Jobs <ChevronDown className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => navigate('/student/jobs')}>Browse Jobs</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/student/jobs#saved')}>Saved Jobs</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/student/jobs#resume')}>Resume Analysis</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Right: Theme Toggle, Notifications, Support, Profile */}

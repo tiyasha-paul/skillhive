@@ -30,9 +30,13 @@ app.get('/api/audio/info/:videoId', async (req, res) => {
 
     const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
+    // Check for cookies file to bypass bot detection
+    const cookiesArgs = process.env.COOKIES_PATH ? ['--cookies', process.env.COOKIES_PATH] : [];
+
     const ytdlp = spawn(YTDLP_PATH, [
         '--dump-json',
         '--no-download',
+        ...cookiesArgs,
         ytUrl
     ]);
 
@@ -92,11 +96,19 @@ app.get('/api/audio/stream/:videoId', (req, res) => {
     // -f bestaudio: Get best audio quality
     // -o -: Output to stdout
     // --quiet: Reduce output noise
+    // Check for cookies file
+    const cookiesArgs = process.env.COOKIES_PATH ? ['--cookies', process.env.COOKIES_PATH] : [];
+
+    // Use yt-dlp to extract audio and stream to client
+    // -f bestaudio: Get best audio quality
+    // -o -: Output to stdout
+    // --quiet: Reduce output noise
     const ytdlp = spawn(YTDLP_PATH, [
         '-f', 'bestaudio[ext=webm]/bestaudio/best',
         '-o', '-',
         '--quiet',
         '--no-warnings',
+        ...cookiesArgs,
         ytUrl
     ]);
 
@@ -138,10 +150,15 @@ app.get('/api/audio/url/:videoId', async (req, res) => {
     const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
     // Get direct audio URL without downloading
+    // Check for cookies file
+    const cookiesArgs = process.env.COOKIES_PATH ? ['--cookies', process.env.COOKIES_PATH] : [];
+
+    // Get direct audio URL without downloading
     const ytdlp = spawn(YTDLP_PATH, [
         '-f', 'bestaudio[ext=m4a]/bestaudio/best',
         '-g', // Get URL only
         '--quiet',
+        ...cookiesArgs,
         ytUrl
     ]);
 

@@ -51,6 +51,7 @@ export function PodcastPlayer({ episode, onClose }: PodcastPlayerProps) {
 
   const fetchAudioUrl = async (videoId: string) => {
     try {
+      console.log('Connecting to audio server:', AUDIO_SERVER_URL);
       // Use the direct URL endpoint for better seeking support
       const response = await fetch(`${AUDIO_SERVER_URL}/api/audio/url/${videoId}`);
 

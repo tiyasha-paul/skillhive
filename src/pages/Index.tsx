@@ -76,17 +76,16 @@ const Index = () => {
             <div className="text-center max-w-4xl mx-auto">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 backdrop-blur-md border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-semibold mb-6 animate-fade-in transition-colors">
                 <GraduationCap size={14} />
-                <span>AI-Powered Adaptive Learning</span>
+                <span>The Complete Student Ecosystem</span>
               </div>
 
               <h2 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-8 animate-fade-in leading-[1.1]">
-                Master Subjects at <br />
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-500 transition-all">Your Own Pace</span>
+                Master Your Studies <br />
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-500 transition-all">Launch Your Career</span>
               </h2>
 
               <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-3xl mx-auto leading-relaxed animate-fade-in [animation-delay:0.2s] transition-colors">
-                SkillHive utilizes state-of-the-art AI to map your knowledge gaps
-                and build a <span className="text-slate-900 dark:text-white font-semibold">personalized trajectory</span> that evolves as you learn.
+                From <strong>distraction-free learning</strong> and <strong>smart practice</strong> to <strong>AI resume analysis</strong> and <strong>real-time job matching</strong>, SkillHive powers every step of your journey.
               </p>
 
               <div className="flex justify-center items-center animate-fade-in [animation-delay:0.4s]">
@@ -95,7 +94,7 @@ const Index = () => {
                   className="rounded-full px-10 h-14 text-lg font-bold bg-blue-600 hover:bg-blue-500 shadow-[0_0_30px_rgba(37,99,235,0.2)] dark:shadow-[0_0_30px_rgba(37,99,235,0.3)] transition-all group border-none text-white"
                   onClick={() => navigate('/student/signup')}
                 >
-                  Join as Student
+                  Start Your Journey
                   <ChevronRight size={24} className="ml-2 group-hover:translate-x-2 transition-transform" />
                 </Button>
               </div>
@@ -114,27 +113,27 @@ const Index = () => {
             <div className="text-center mb-16">
               <h3 className="text-4xl md:text-5xl font-bold mb-6">Why Choose SkillHive?</h3>
               <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-lg leading-relaxed transition-colors">
-                Built to solve the "one-size-fits-all" education problem with intelligent, adaptive technology.
+                Everything you need to succeed in university and beyond, integrated into one intelligent platform.
               </p>
             </div>
             <div className="grid md:grid-cols-3 gap-10">
               <FeatureCard
                 icon={Zap}
-                title="Real-Time Adaptation"
-                subtitle="Difficulty adjusts dynamically"
-                description="Our algorithms adjust content difficulty in real-time based on your performance and confidence levels."
+                title="Distraction-Free Learning"
+                subtitle="Smart Video Filters"
+                description="Our AI blocks non-educational content, giving you a clean, focused environment to watch curated lectures and tutorials."
               />
               <FeatureCard
                 icon={Target}
-                title="Gap Detection"
-                subtitle="Identify weak spots"
-                description="We pinpoint exactly which concepts are holding you back and provide targeted interventions."
+                title="Smart Practice"
+                subtitle="Identify & Fix Weaknesses"
+                description="Take quizzes to detect weak spots, track your accuracy, and receive instant study recommendations to improve."
               />
               <FeatureCard
                 icon={Map}
-                title="Personalized Paths"
-                subtitle="Your unique journey"
-                description="Your learning journey is unique. We generate custom study plans that fit your goals and learning style."
+                title="Career Launchpad"
+                subtitle="Resume AI & Job Search"
+                description="Find real-time jobs and use our AI to analyze your resume against them, getting match scores and actionable feedback."
               />
             </div>
           </div>

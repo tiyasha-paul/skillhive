@@ -6,7 +6,7 @@ import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Loader2, AlertCir
 import type { YouTubeVideo } from '@/services/youtube';
 import { isFavorite, toggleFavorite, getProgress, saveLastPlayed } from '@/services/podcastStorage';
 
-const AUDIO_SERVER_URL = 'http://localhost:3001';
+const AUDIO_SERVER_URL = import.meta.env.VITE_AUDIO_SERVER_URL || 'http://localhost:3001';
 
 interface PodcastPlayerProps {
   episode: YouTubeVideo | null;

@@ -11,8 +11,8 @@ const YTDLP_PATH = process.env.YTDLP_PATH || path.join(__dirname, 'yt-dlp.exe');
 
 // Enable CORS for frontend
 app.use(cors({
-    origin: ['http://localhost:8080', 'http://localhost:5173', 'http://127.0.0.1:8080'],
-    methods: ['GET'],
+    origin: '*', // Allow all origins for deployed frontend
+    methods: ['GET', 'POST', 'OPTIONS'],
 }));
 
 // Health check endpoint

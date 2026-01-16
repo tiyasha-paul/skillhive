@@ -13,6 +13,7 @@ import {
   getProgressOverTime,
   getSubjectPerformance,
   getWeakAreas,
+  getRecentWeakAreas,
   getStrongAreas,
   getDifficultyDistribution,
   getSkillRadarData,
@@ -53,7 +54,6 @@ import {
   Clock,
   Award,
   AlertCircle,
-  BookOpen,
   Zap,
   BarChart3,
   PieChart as PieChartIcon,
@@ -61,7 +61,14 @@ import {
   Lightbulb,
   Loader2,
   MessageSquare,
+  Info,
 } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { getQuizResults } from '@/services/quizResults';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -277,13 +284,16 @@ export default function StudentPractice() {
           </div>
           <Button
             onClick={() => {
+              // Get recent weak areas specifically for the context
+              const recentWeak = getRecentWeakAreas(5);
+
               const context = `Here is my current practice summary:
 - Average Score: ${metrics.averageScore.toFixed(1)}/10
 - Average Accuracy: ${metrics.averageAccuracy.toFixed(1)}%
 - Average Time per Question: ${Math.round(metrics.averageTimePerQuestion)}s
 - Weakest Subject: ${metrics.weakestSubject.subject} (${metrics.weakestSubject.accuracy.toFixed(1)}%)
 - Best Subject: ${metrics.bestSubject.subject} (${metrics.bestSubject.accuracy.toFixed(1)}%)
-- Recent Weak Topics: ${weakAreas.slice(0, 3).map(w => w.topic).join(', ')}
+- Latest 5 Weak Topics: ${recentWeak.map(w => w.topic).join(', ')}
 
 Can you give me specific advice on how to improve my weak areas?`;
 
@@ -303,7 +313,43 @@ Can you give me specific advice on how to improve my weak areas?`;
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Quizzes</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground hover:text-primary">
+                      <Info className="h-4 w-4" />
+                      <span className="sr-only">Quiz breakdown</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-3" align="end">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm border-b pb-1">Quizzes per Subject</h4>
+                      <div className="text-xs space-y-1">
+                        {(() => {
+                          // Calculate quiz counts per subject
+                          const allResults = getQuizResults();
+                          if (!allResults || allResults.length === 0) return <p className="text-muted-foreground">No quizzes taken yet.</p>;
+
+                          const subjectCounts = allResults.reduce((acc, result) => {
+                            acc[result.subject] = (acc[result.subject] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>);
+
+                          return Object.entries(subjectCounts)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([subject, count]) => (
+                              <div key={subject} className="flex justify-between items-center">
+                                <span className="font-medium truncate max-w-[160px]" title={subject}>{subject}</span>
+                                <Badge variant="secondary" className="h-5 px-1.5">{count}</Badge>
+                              </div>
+                            ));
+                        })()}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{metrics.totalQuizzes}</div>
@@ -687,16 +733,6 @@ Can you give me specific advice on how to improve my weak areas?`;
                                       <p className="text-xs text-muted-foreground py-1">No specific videos found.</p>
                                     )}
                                   </div>
-
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="w-full h-7 text-xs"
-                                    onClick={() => navigate('/student/study-notes')}
-                                  >
-                                    <BookOpen className="h-3 w-3 mr-2" />
-                                    View Study Notes
-                                  </Button>
                                 </div>
                               </AccordionContent>
                             </AccordionItem>

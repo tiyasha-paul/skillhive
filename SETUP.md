@@ -54,6 +54,10 @@ VITE_YOUTUBE_API_KEY=your_youtube_api_key
 
 # OpenRouter (For legacy Chatbot if enabled)
 VITE_OPENROUTER_API_KEY=your_openrouter_key
+
+# JSearch API (For Real-Time Job Listings)
+# Subscribe to Basic Plan (Free) at: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch
+VITE_JSEARCH_API_KEY=your_rapidapi_key
 ```
 
 ### 4. Set Up Supabase Database

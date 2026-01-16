@@ -7,25 +7,30 @@ SkillHive is an intelligent learning platform that adapts to each student's pace
 ## Key Features
 
 ### Adaptive Learning
+- **Distraction-Free Learning Features**: Smart Video Filter that automatically blocks non-educational content using AI, ensuring focused study sessions.
 - **Dynamic Quizzes**: AI-generated questions (MCQs) powered by Google Gemini, tailored to specific concepts.
 - **Weak Area Detection**: Automatically identifies struggle areas and tags concepts for review.
 - **Personalized Recommendations**: YouTube video suggestions based on performance and learning gaps.
 
 ### Career Assistance
-- **Smart Resume Analysis**: Upload a resume (PDF) or fill out a profile to get instant AI feedback on strengths and improvements.
-- **Job Matching**: Intelligent job search that matches your skills and experience to relevant opportunities.
-- **Explained Matches**: Detailed reasoning for why a job is a good fit and what skills might be missing.
+- **Smart Resume Analysis**: Upload a resume (PDF) or fill out a profile to get instant AI feedback on strengths, improvements, and match scores.
+- **Real-Time Job Matching**: Integration with JSearch API to fetch live job listings from LinkedIn, Indeed, and more.
+- **AI Gap Analysis**: Detailed reasoning for why a job is a good fit and what skills might be missing.
 
 ### Learning Tools
-- **Podcast Mode**: Convert educational YouTube videos into audio-only podcasts for on-the-go learning and also has podcasts on general topics(requires `yt-dlp`).
+- **AI Study Coach**: A built-in chatbot that provides instant study help, answers questions, and explains complex topics using Gemini.
+- **SkillHive Browser Extension**: A Chrome extension that integrates with your browser to block distractions and keep you focused on your study goals.
+- **Podcast Mode**: Convert educational YouTube videos into audio-only podcasts for on-the-go learning.
+- **Personal Knowledge Base**: Create and organize study notes, including AI-generated summaries from videos and custom flashcards.
 - **Interactive Timetable**: Manage classes and study sessions.
-- **Support & Focus**: Integrated support system and goal tracking.
+- **Progress Tracking**: Track daily activity streaks and visualize learning habits.
 
 ### Architecture
 - **Frontend**: React, Vite, TypeScript, Tailwind CSS, Shadcn UI.
 - **Backend/Services**: 
   - **Audio Server**: Node.js Express server for YouTube audio extraction.
   - **AI Integration**: Google Gemini (via API) for reasoning and content generation.
+  - **Job Data**: JSearch API (RapidAPI) for real-time job listings.
   - **Database**: Supabase for user profiles, progress tracking, and authentication.
 
 ---

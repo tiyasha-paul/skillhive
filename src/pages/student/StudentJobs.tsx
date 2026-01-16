@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { searchJobs, type JobResult, extractCompanyName, extractJobType, extractWorkType, type JobSearchParams } from '@/services/jobSearch';
 import { recordActivity } from '@/services/activityTracker';
-import { Loader2, Search, MapPin, Briefcase, Clock, ExternalLink, Bookmark, BookmarkCheck, FileText, Upload, Star, TrendingUp, ArrowLeft } from 'lucide-react';
+import { Loader2, Search, MapPin, Briefcase, Clock, ExternalLink, Bookmark, BookmarkCheck, FileText, Upload, Star, TrendingUp, ArrowLeft, Heart } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { JobApplicationForm, type JobApplicationData } from '@/components/JobApplicationForm';
@@ -247,6 +247,7 @@ Languages: ${data.languages.join(', ')}
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
+                  className="flex-1 text-base py-6 hover:scale-105 transition-transform"
                   onClick={() => setSelectedJob(job)}
                 >
                   View Details
@@ -508,7 +509,7 @@ Languages: ${data.languages.join(', ')}
                                     {rec.matchScore}% Match
                                   </Badge>
                                 </div>
-                                <div className="flex flex-wrap gap-2 mb-2">
+                                <div className="flex flex-wrap gap-2">
                                   <Badge variant="secondary" className="flex items-center gap-1">
                                     <Briefcase className="h-3 w-3" />
                                     {companyName}
@@ -518,61 +519,62 @@ Languages: ${data.languages.join(', ')}
                                     {job.location || 'Not specified'}
                                   </Badge>
                                 </div>
-                                <div className="mb-3">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs text-muted-foreground">Match Score</span>
-                                    <span className="text-xs font-semibold">{rec.matchScore}%</span>
-                                  </div>
-                                  <Progress value={rec.matchScore} className="h-2" />
-                                </div>
-                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                  {rec.matchReason}
-                                </p>
-                                {rec.skillsMatch.length > 0 && (
-                                  <div className="mb-2">
-                                    <p className="text-xs font-semibold mb-1">Matching Skills:</p>
-                                    <div className="flex flex-wrap gap-1">
-                                      {rec.skillsMatch.map((skill, idx) => (
-                                        <Badge key={idx} variant="outline" className="text-xs">
-                                          {skill}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                                {rec.missingSkills.length > 0 && (
-                                  <div>
-                                    <p className="text-xs font-semibold mb-1 text-orange-600">Missing Skills:</p>
-                                    <div className="flex flex-wrap gap-1">
-                                      {rec.missingSkills.map((skill, idx) => (
-                                        <Badge key={idx} variant="outline" className="text-xs text-orange-600">
-                                          {skill}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
+                              </div>
+                              <div className="flex items-center">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="ml-2 shrink-0 h-8 w-8 p-0"
+                                  onClick={() => isJobSaved(applyLink) ? handleUnsaveJob(applyLink) : handleSaveJob(job)}
+                                >
+                                  <Heart className={`h-5 w-5 ${isJobSaved(applyLink) ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="ml-2 shrink-0"
+                                  onClick={() => window.open(applyLink, '_blank', 'noopener,noreferrer')}
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  Apply Now
+                                </Button>
                               </div>
                             </div>
                           </CardHeader>
                           <CardContent>
-                            <div className="flex gap-2">
-                              <Button
-                                className="flex-1"
-                                onClick={() => window.open(applyLink, '_blank', 'noopener,noreferrer')}
-                              >
-                                <ExternalLink className="h-4 w-4 mr-2" />
-                                Apply Now
-                              </Button>
-                              <Button
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedJob(job);
-                                }}
-                              >
-                                View Details
-                              </Button>
+                            <div className="mb-4">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-muted-foreground">Match Score</span>
+                                <span className="text-xs font-semibold">{rec.matchScore}%</span>
+                              </div>
+                              <Progress value={rec.matchScore} className="h-2" />
                             </div>
+                            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                              {rec.matchReason}
+                            </p>
+                            {rec.skillsMatch.length > 0 && (
+                              <div className="mb-3">
+                                <p className="text-xs font-semibold mb-2">Matching Skills:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {rec.skillsMatch.map((skill, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-xs">
+                                      {skill}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {rec.missingSkills.length > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold mb-2 text-orange-600">Missing Skills:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {rec.missingSkills.map((skill, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-xs text-orange-600">
+                                      {skill}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       );
@@ -759,7 +761,7 @@ Languages: ${data.languages.join(', ')}
           </TabsContent>
 
           <TabsContent value="resume" className="space-y-6">
-            {!showForm && (
+            {!showForm && !formSubmitted && (
               <Card>
                 <CardContent className="py-12 text-center">
                   <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />

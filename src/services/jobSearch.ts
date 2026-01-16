@@ -32,9 +32,64 @@ export async function searchJobs(params: JobSearchParams, startIndex: number = 1
   jobs: JobResult[];
   totalResults: number;
 }> {
+  // 1. Try JSearch API if key is configured
+  const JSEARCH_API_KEY = import.meta.env.VITE_JSEARCH_API_KEY;
+  if (JSEARCH_API_KEY) {
+    try {
+      console.log('[JobSearch] using Real-time JSearch API');
+      let query = `${params.field} in ${params.location}`;
+      if (params.jobType) query += ` ${params.jobType}`;
+      if (params.experienceLevel) query += ` ${params.experienceLevel}`;
+
+      const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&page=${Math.ceil(startIndex / 10)}&num_pages=1`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'x-rapidapi-key': JSEARCH_API_KEY,
+          'x-rapidapi-host': 'jsearch.p.rapidapi.com'
+        }
+      });
+
+      if (!response.ok) throw new Error(`JSearch API error: ${response.status}`);
+
+      const data = await response.json();
+      const jobList = data.data || [];
+
+      // Map JSearch response to our JobResult interface
+      const mappedJobs: JobResult[] = jobList.map((j: any) => ({
+        title: j.job_title,
+        company: j.employer_name,
+        location: j.job_city ? `${j.job_city}, ${j.job_country}` : (j.job_country || 'Remote'),
+        type: j.job_employment_type || 'Full Time',
+        work_type: j.job_is_remote ? 'Remote' : 'On-site',
+        description: j.job_description,
+        apply_link: j.job_apply_link,
+        experience_level: params.experienceLevel, // JSearch doesn't always return this cleanly, fallback to search param
+        salary_range: j.job_min_salary ? `${j.job_min_salary}-${j.job_max_salary} ${j.job_salary_currency}` : undefined,
+        industry: j.job_job_title,
+        posted_date: j.job_posted_at_datetime_utc ? new Date(j.job_posted_at_datetime_utc).toLocaleDateString() : 'Recently',
+        link: j.job_apply_link,
+        snippet: j.job_description ? j.job_description.substring(0, 200) + '...' : '',
+        displayLink: j.employer_website || j.employer_name
+      }));
+
+      return {
+        jobs: mappedJobs,
+        totalResults: mappedJobs.length > 0 ? 100 : 0 // JSearch doesn't always give total, assume more if data exists
+      };
+
+    } catch (error) {
+      console.error('[JobSearch] JSearch API failed, falling back to AI simulation:', error);
+      // Fallthrough to Gemini simulation
+    }
+  }
+
+  // 2. Fallback to Gemini AI Simulation
   try {
     // Build structured query for OpenRouter
     let query = `${params.field} jobs in ${params.location}`;
+    // ... rest of existing Gemini logic ...
 
     if (params.jobType && params.jobType !== '') {
       query += ` for ${params.jobType}`;

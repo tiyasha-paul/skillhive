@@ -93,7 +93,8 @@ Return ONLY the JSON object:`;
     return resumeData;
   } catch (error) {
     console.error('Error analyzing resume:', error);
-    throw new Error('Failed to analyze resume. Please ensure the resume text is clear and readable.');
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`Failed to analyze resume: ${errorMessage}`);
   }
 }
 

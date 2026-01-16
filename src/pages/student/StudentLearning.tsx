@@ -7,7 +7,8 @@ import { subjectData, type StreamData, type Subject } from '@/data/subjects';
 import { searchYouTubeVideos, getEmbedUrl, getVideosFromChannel, type YouTubeVideo } from '@/services/youtube';
 import { recordActivity } from '@/services/activityTracker';
 import { Input } from '@/components/ui/input';
-import { Loader2, Play, ArrowLeft, BookOpen, Search, Info, X } from 'lucide-react';
+import { validateSearchQuery } from '@/services/gemini';
+import { Loader2, Play, ArrowLeft, BookOpen, Search, Info, X, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 type ViewState = 'stream' | 'year' | 'semester' | 'subject' | 'videos';
@@ -25,6 +26,8 @@ export default function StudentLearning() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<YouTubeVideo[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const streamData = selectedStream ? subjectData[selectedStream] : null;
   const yearData = streamData && selectedYear
@@ -153,9 +156,27 @@ export default function StudentLearning() {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
+    console.log('Starting search for:', searchQuery);
     setIsSearching(true);
+    setSearchResults([]);
+    setSearchError(null);
+    setHasSearched(true);
+
     try {
+      // Smart Filter: Validate if topic is educational
+      console.log('Validating query...');
+      const isValid = await validateSearchQuery(searchQuery);
+      console.log('Validation result:', isValid);
+
+      if (!isValid) {
+        setSearchError("Please search for educational topics only. Taking a break is important, but let's keep this space for learning!");
+        setIsSearching(false);
+        return;
+      }
+
+      console.log('Validation passed, searching YouTube...');
       const results = await searchYouTubeVideos(searchQuery + ' engineering tutorial', 12);
+      console.log('YouTube results:', results.length);
       setSearchResults(results);
     } catch (error) {
       console.error('Search failed:', error);
@@ -181,7 +202,10 @@ export default function StudentLearning() {
               placeholder="Search for topics (e.g., 'Thermodynamics', 'Calculus')..."
               className="pl-9"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setHasSearched(false);
+              }}
             />
           </div>
           <Button type="submit" disabled={isSearching}>
@@ -209,6 +233,33 @@ export default function StudentLearning() {
           </p>
         </div>
       </div>
+
+      {searchError && (
+        <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-md flex items-start gap-3 text-destructive">
+          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-medium text-sm">Topic filtered</h4>
+            <p className="text-sm opacity-90">{searchError}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 -mt-1 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+            onClick={() => setSearchError(null)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Show results or 'No results' state */}
+      {/* Show results or 'No results' state */}
+      {!isSearching && !searchError && searchResults.length === 0 && searchQuery && hasSearched && (
+        <div className="text-center py-12 text-muted-foreground">
+          <p>No suitable educational videos found for "{searchQuery}".</p>
+          <p className="text-xs mt-1">Try refining your search terms or checking different keywords.</p>
+        </div>
+      )}
 
       {searchResults.length > 0 && (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">

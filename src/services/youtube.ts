@@ -165,8 +165,7 @@ export async function searchYouTubeVideos(
     url.searchParams.append('type', 'video');
     url.searchParams.append('maxResults', maxResults.toString());
     url.searchParams.append('key', YOUTUBE_API_KEY);
-    url.searchParams.append('order', 'relevance');
-    url.searchParams.append('videoDuration', 'medium'); // 4-20 minutes
+    url.searchParams.append('order', 'viewCount');
     url.searchParams.append('safeSearch', 'strict');
     // If you want videos from a single channel (e.g. your own channel), pass channelId
     if (channelId) {
@@ -344,8 +343,7 @@ export async function searchVideosForTopic(
     url.searchParams.append('type', 'video');
     url.searchParams.append('maxResults', maxResults.toString());
     url.searchParams.append('key', YOUTUBE_API_KEY);
-    url.searchParams.append('order', 'relevance');
-    url.searchParams.append('videoDuration', 'medium');
+    url.searchParams.append('order', 'viewCount');
     url.searchParams.append('safeSearch', 'strict');
     url.searchParams.append('videoEmbeddable', 'true');
 
@@ -521,8 +519,7 @@ export async function searchCompetitiveExamVideos(
     url.searchParams.append('type', 'video');
     url.searchParams.append('maxResults', maxResults.toString());
     url.searchParams.append('key', YOUTUBE_API_KEY);
-    url.searchParams.append('order', 'relevance');
-    url.searchParams.append('videoDuration', 'medium');
+    url.searchParams.append('order', 'viewCount');
     url.searchParams.append('safeSearch', 'strict');
 
     const response = await fetch(url.toString());

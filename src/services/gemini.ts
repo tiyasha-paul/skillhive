@@ -231,3 +231,23 @@ export async function extractTextFromPDF(file: File): Promise<string> {
     throw new Error('Failed to extract text from PDF file. Please ensure it is a valid PDF.');
   }
 }
+
+/**
+ * Validates if the search query is related to educational topics.
+ * Returns true if educational, false otherwise.
+ */
+export async function validateSearchQuery(query: string): Promise<boolean> {
+  const prompt = `Is the search query "${query}" related to educational topics, engineering, science, technology, math, career development, or general knowledge? 
+  
+  Reply with strictly "YES" or "NO".`;
+
+  try {
+    const response = await generateGeminiText(prompt);
+    const cleanResponse = response.trim().toUpperCase();
+    return cleanResponse.includes('YES');
+  } catch (error) {
+    console.error('Error validating search query:', error);
+    // If validation fails (e.g., API error), default to allowing the search to be safe
+    return true;
+  }
+}

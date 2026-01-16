@@ -40,9 +40,9 @@ SkillHive is an intelligent learning platform that adapts to each student's pace
 **For complete installation and usage instructions, please read [SETUP.md](./SETUP.md).**
 
 The setup guide covers:
-- Prerequisites (Node.js, Supabase, yt-dlp).
-- detailed Environment Variable configuration.
-- How to run the Development Server and Audio Backend.
+- Prerequisites (Node.js, Supabase, yt-dlp)
+- Detailed Environment Variable configuration
+- How to run the Development Server and Audio Backend
 
 ---
 

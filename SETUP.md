@@ -19,7 +19,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 ```bash
 git clone <YOUR_REPOSITORY_URL>
-cd ml-kolkata
+cd skillhive
 ```
 
 ### 2. Install Project Dependencies

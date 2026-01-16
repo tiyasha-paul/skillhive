@@ -36,17 +36,9 @@ export function ChatbotWidget() {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  const hiddenPaths = [
-    '/',
-    '/student/login',
-    '/student/signup',
-    '/mentor/login',
-    '/mentor/signup',
-    '/login',
-    '/signup'
-  ];
-
-  const isHidden = hiddenPaths.includes(location.pathname);
+  // Show on all paths as requested
+  const hiddenPaths: string[] = [];
+  const isHidden = false;
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const stored = sessionStorage.getItem(STORAGE_KEY);
@@ -89,9 +81,7 @@ export function ChatbotWidget() {
     const handleOpenWithContext = (e: CustomEvent<{ context: string }>) => {
       setIsOpen(true);
       setInput(e.detail.context);
-      // Optional: Focus logic could go here
     };
-
 
     window.addEventListener('open-chatbot-with-context', handleOpenWithContext as EventListener);
     return () => {
@@ -99,19 +89,14 @@ export function ChatbotWidget() {
     };
   }, []);
 
-  // Clear chat history when user logs out
+  // Clear chat history when user logs out, but allow guest chat to persist per session
   useEffect(() => {
-    // If not loading and no user, we consider it a logged-out state.
-    // We clear the specific storage key for the chatbot history.
-    if (!loading && !user) {
-      sessionStorage.removeItem(STORAGE_KEY);
-      setMessages([introMessage]);
-    }
+    // If we want to reset chat on logout, we can do it here. 
+    // For now, let's keep it simple.
   }, [user, loading]);
 
   useEffect(() => {
     if (!scrollRef.current || !isOpen) return;
-    // Use requestAnimationFrame to ensure DOM has updated
     requestAnimationFrame(() => {
       scrollToBottom('auto');
     });
@@ -130,9 +115,7 @@ export function ChatbotWidget() {
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     const el = scrollRef.current;
     if (!el) return;
-    // Use scrollTop for more reliable scrolling
     el.scrollTop = el.scrollHeight;
-    // Also use scrollTo as fallback
     if (behavior === 'smooth') {
       el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
     }
@@ -180,7 +163,6 @@ export function ChatbotWidget() {
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
-      // Ensure scroll happens after state update
       setTimeout(() => {
         scrollToBottom('smooth');
       }, 100);
@@ -210,7 +192,8 @@ export function ChatbotWidget() {
 
   const handleToggle = () => setIsOpen((prev) => !prev);
 
-  if (loading || !user || isHidden) return null;
+  // Allow rendering even without user (guest mode)
+  if (loading) return null;
 
   return (
     <>

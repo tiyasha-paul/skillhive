@@ -395,9 +395,43 @@ export async function searchVideosForTopic(
     }
 
     // Cache the results
-    setCachedVideos(searchQuery, maxResults, videos);
-    console.log(`Found ${videos.length} YouTube videos for ${topic}`);
-    return videos;
+    if (videos.length > 0) {
+      setCachedVideos(searchQuery, maxResults, videos);
+      console.log(`Found ${videos.length} YouTube videos for ${topic}`);
+      return videos;
+    } else {
+      console.warn(`No YouTube videos found for complex query: ${searchQuery}. Trying fallback...`);
+
+      // FALLBACK: Try a simpler query
+      const fallbackQuery = `${subject ? subject + ' ' : ''}${topic} tutorial`;
+
+      // Check cache for fallback
+      const cachedFallback = getCachedVideos(fallbackQuery, maxResults);
+      if (cachedFallback) return cachedFallback;
+
+      const fallbackUrl = new URL(YOUTUBE_API_URL);
+      fallbackUrl.searchParams.append('part', 'snippet');
+      fallbackUrl.searchParams.append('q', fallbackQuery);
+      fallbackUrl.searchParams.append('type', 'video');
+      fallbackUrl.searchParams.append('maxResults', maxResults.toString());
+      fallbackUrl.searchParams.append('key', YOUTUBE_API_KEY);
+      fallbackUrl.searchParams.append('order', 'relevance'); // Relevance might be better for shorter queries
+      fallbackUrl.searchParams.append('safeSearch', 'strict');
+      fallbackUrl.searchParams.append('videoEmbeddable', 'true');
+
+      const fallbackResponse = await fetch(fallbackUrl.toString());
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json();
+        const fallbackVideos = fallbackData.items || [];
+        if (fallbackVideos.length > 0) {
+          setCachedVideos(fallbackQuery, maxResults, fallbackVideos);
+          console.log(`Found ${fallbackVideos.length} YouTube videos for fallback: ${fallbackQuery}`);
+          return fallbackVideos;
+        }
+      }
+
+      return [];
+    }
   } catch (error) {
     console.error('Error fetching YouTube videos for topic:', error);
 

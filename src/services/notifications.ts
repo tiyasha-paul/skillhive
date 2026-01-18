@@ -29,18 +29,18 @@ export async function createNotification(
       read: false,
       created_at: new Date().toISOString(),
     };
-    
+
     notifications.unshift(newNotification);
     // Keep only last 50 notifications
     if (notifications.length > 50) {
       notifications.splice(50);
     }
-    
+
     localStorage.setItem(`notifications_${userId}`, JSON.stringify(notifications));
-    
+
     // Trigger custom event for real-time updates
     window.dispatchEvent(new CustomEvent('notification-created', { detail: newNotification }));
-    
+
     return newNotification;
   } catch (error) {
     console.error('Error creating notification:', error);
@@ -83,6 +83,12 @@ export function deleteNotification(userId: string, notificationId: string): void
   const notifications = getStoredNotifications(userId);
   const filtered = notifications.filter(n => n.id !== notificationId);
   localStorage.setItem(`notifications_${userId}`, JSON.stringify(filtered));
+  window.dispatchEvent(new CustomEvent('notification-updated'));
+}
+
+// Clear all notifications
+export function clearAllNotifications(userId: string): void {
+  localStorage.setItem(`notifications_${userId}`, JSON.stringify([]));
   window.dispatchEvent(new CustomEvent('notification-updated'));
 }
 
@@ -137,7 +143,7 @@ export async function notifyDailySummary(
 ): Promise<void> {
   const count = sessions.length;
   const subjects = [...new Set(sessions.map(s => s.subject))];
-  
+
   await createNotification(userId, {
     type: 'summary',
     title: 'Today\'s Study Plan',

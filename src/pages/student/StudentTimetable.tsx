@@ -38,6 +38,8 @@ import {
   XCircle,
   PlayCircle,
   Info,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -59,6 +61,15 @@ export default function StudentTimetable() {
   const [view, setView] = useState<'weekly' | 'daily' | 'monthly'>('monthly');
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>('Monday');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  // Start week from today's week (anchored to Monday)
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
   const [sessionStatuses, setSessionStatuses] = useState<Map<string, SessionStatus>>(new Map());
   const [syncEnabled, setSyncEnabledState] = useState(getSyncEnabled());
 
@@ -183,21 +194,7 @@ export default function StudentTimetable() {
         }
       }
 
-      // Check if session is missed
-      if (now > sessionEnd && minutesUntil < -5) {
-        const status = sessionStatuses.get(session.id || '');
-        if (status !== 'missed' && status !== 'completed') {
-          await createNotification(user.id, {
-            type: 'alert',
-            title: 'Missed Session',
-            message: `You missed your ${session.subject} session at ${formatTime(session.start_time)}. Want to reschedule?`,
-            metadata: { sessionId: session.id, event: 'missed' },
-          });
-          toast.error(`Missed Session: ${session.subject}`, {
-            description: `You missed your session at ${formatTime(session.start_time)}`,
-          });
-        }
-      }
+
     });
   }, [sessions, user, sessionStatuses]);
 
@@ -465,6 +462,14 @@ export default function StudentTimetable() {
   const getSessionsForDay = (day: DayOfWeek): TimetableSession[] => {
     return sessions.filter(s => s.day === day).sort((a, b) => {
       return a.start_time.localeCompare(b.start_time);
+    });
+  };
+
+  const moveWeek = (direction: 'prev' | 'next') => {
+    setCurrentWeekStart(prev => {
+      const newDate = new Date(prev);
+      newDate.setDate(prev.getDate() + (direction === 'next' ? 7 : -7));
+      return newDate;
     });
   };
 
@@ -738,6 +743,34 @@ export default function StudentTimetable() {
 
           {/* Weekly View with Time Grid */}
           <TabsContent value="weekly" className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => moveWeek('prev')}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="font-semibold text-sm">
+                  {currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {(() => {
+                    const end = new Date(currentWeekStart);
+                    end.setDate(currentWeekStart.getDate() + 6);
+                    return end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                  })()}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => moveWeek('next')}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" className="text-xs ml-2" onClick={() => {
+                  const d = new Date();
+                  const day = d.getDay();
+                  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                  d.setDate(diff);
+                  d.setHours(0, 0, 0, 0);
+                  setCurrentWeekStart(d);
+                }}>
+                  Today
+                </Button>
+              </div>
+            </div>
+
             <div className="overflow-x-auto rounded-lg border bg-white dark:bg-gray-900">
               <div className="flex min-w-[1000px]">
                 {/* Time column */}
@@ -756,21 +789,12 @@ export default function StudentTimetable() {
                 {daysOfWeek.map((day, index) => {
                   const daySessions = getSessionsForDay(day);
 
-                  // Calculate the date for this day
-                  // Anchor to the current week (starting Monday)
-                  const today = new Date();
-                  const jsDay = today.getDay(); // 0=Sun, 1=Mon...
-                  const currentMonIndex = (jsDay + 6) % 7; // Convert to 0=Mon, ... 6=Sun
-
-                  // daysOfWeek array is ['Monday', ... 'Sunday'] so index 0 is Monday
-                  // The difference between the column index and today's index gives the day offset
-                  const daysDiff = index - currentMonIndex;
-
-                  const dayDate = new Date(today);
-                  dayDate.setDate(today.getDate() + daysDiff);
+                  // Calculate the date for this day based on currentWeekStart
+                  const dayDate = new Date(currentWeekStart);
+                  dayDate.setDate(currentWeekStart.getDate() + index);
 
                   const dateNum = dayDate.getDate();
-                  const isToday = daysDiff === 0;
+                  const isToday = new Date().toDateString() === dayDate.toDateString();
 
                   // Calculate current time position for the red line indicator
                   const now = new Date();
@@ -812,7 +836,13 @@ export default function StudentTimetable() {
                         )}
 
                         {/* Sessions */}
-                        {daySessions.map((session) => (
+                        {daySessions.filter(session => {
+                          if (!session.date) return true; // Recurring
+                          // Compare YYYY-MM-DD
+                          const sessionDate = session.date;
+                          const cellDate = dayDate.toLocaleDateString('en-CA'); // YYYY-MM-DD
+                          return sessionDate === cellDate;
+                        }).map((session) => (
                           <SessionBlock key={session.id} session={session} day={day} />
                         ))}
                       </div>
@@ -825,76 +855,77 @@ export default function StudentTimetable() {
 
           {/* Daily View */}
           <TabsContent value="daily" className="space-y-4">
-            <div className="flex gap-2 mb-4">
-              {daysOfWeek.map((day, index) => {
-                // Calculate the date for this day
-                // Anchor to the current week (starting Monday)
-                const today = new Date();
-                const jsDay = today.getDay(); // 0=Sun, 1=Mon...
-                const currentMonIndex = (jsDay + 6) % 7; // Convert to 0=Mon, ... 6=Sun
-
-                // daysOfWeek array is ['Monday', ... 'Sunday'] so index 0 is Monday
-                // The difference between the column index and today's index gives the day offset
-                const daysDiff = index - currentMonIndex;
-
-                const dayDate = new Date(today);
-                dayDate.setDate(today.getDate() + daysDiff);
-                const dateString = dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                const isToday = daysDiff === 0;
-
-                return (
-                  <Button
-                    key={day}
-                    variant={selectedDay === day ? 'default' : 'outline'}
-                    onClick={() => setSelectedDay(day)}
-                    className="flex-1 flex flex-col gap-0.5 h-auto py-2"
-                  >
-                    <span className="text-sm font-semibold">{day.substring(0, 3)}</span>
-                    <span className={`text-xs ${selectedDay === day ? 'opacity-90' : 'text-muted-foreground'} ${isToday ? 'font-medium' : ''}`}>
-                      {dateString}
-                    </span>
-                  </Button>
-                );
-              })}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => {
+                  setSelectedDate((prev) => {
+                    const next = new Date(prev);
+                    next.setDate(prev.getDate() - 1);
+                    const days: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    setSelectedDay(days[next.getDay()]);
+                    return next;
+                  });
+                }}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="font-semibold text-sm">
+                  {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => {
+                  setSelectedDate((prev) => {
+                    const next = new Date(prev);
+                    next.setDate(prev.getDate() + 1);
+                    const days: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    setSelectedDay(days[next.getDay()]);
+                    return next;
+                  });
+                }}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" className="text-xs ml-2" onClick={() => {
+                  const today = new Date();
+                  setSelectedDate(today);
+                  const days: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                  setSelectedDay(days[today.getDay()]);
+                }}>
+                  Today
+                </Button>
+              </div>
             </div>
 
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  {selectedDay}
+                  {selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}
                   <span className="text-sm font-normal text-muted-foreground">
-                    ({(() => {
-                      const today = new Date();
-                      const jsDay = today.getDay(); // 0=Sun, 1=Mon...
-                      const currentMonIndex = (jsDay + 6) % 7; // Convert to 0=Mon, ... 6=Sun
-
-                      const dayIndexMap: Record<DayOfWeek, number> = {
-                        'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3,
-                        'Friday': 4, 'Saturday': 5, 'Sunday': 6
-                      };
-
-                      const targetIndex = dayIndexMap[selectedDay];
-                      const daysDiff = targetIndex - currentMonIndex;
-
-                      const dayDate = new Date(today);
-                      dayDate.setDate(today.getDate() + daysDiff);
-                      return dayDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                    })()})
+                    ({selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })})
                   </span>
                 </CardTitle>
                 <CardDescription>
-                  {getSessionsForDay(selectedDay).length} session{getSessionsForDay(selectedDay).length !== 1 ? 's' : ''} scheduled
+                  {getSessionsForDay(selectedDay).filter(session => {
+                    if (!session.date) return true;
+                    return session.date === selectedDate.toLocaleDateString('en-CA');
+                  }).length} session{getSessionsForDay(selectedDay).filter(session => {
+                    if (!session.date) return true;
+                    return session.date === selectedDate.toLocaleDateString('en-CA');
+                  }).length !== 1 ? 's' : ''} scheduled
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {getSessionsForDay(selectedDay).length === 0 ? (
+                {getSessionsForDay(selectedDay).filter(session => {
+                  if (!session.date) return true;
+                  return session.date === selectedDate.toLocaleDateString('en-CA');
+                }).length === 0 ? (
                   <div className="text-center py-12">
                     <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">No sessions scheduled for {selectedDay}</p>
+                    <p className="text-muted-foreground">No sessions scheduled on {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    {getSessionsForDay(selectedDay).map((session) => (
+                  <div className="space-y-4">
+                    {getSessionsForDay(selectedDay).filter(session => {
+                      if (!session.date) return true;
+                      return session.date === selectedDate.toLocaleDateString('en-CA');
+                    }).map((session) => (
                       <SessionCard key={session.id} session={session} />
                     ))}
                   </div>
@@ -925,7 +956,8 @@ export default function StudentTimetable() {
                       hasSession: (date) => {
                         const days: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
                         const dayName = days[date.getDay()];
-                        return getSessionsForDay(dayName).length > 0;
+                        const dateStr = date.toLocaleDateString('en-CA');
+                        return getSessionsForDay(dayName).some(s => !s.date || s.date === dateStr);
                       }
                     }}
                     modifiersStyles={{
@@ -939,22 +971,26 @@ export default function StudentTimetable() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     Sessions for {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-                    <span className="text-sm font-normal text-muted-foreground ml-auto">
-                      (Recurring Weekly Schedule)
-                    </span>
+
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {getSessionsForDay(selectedDay).length === 0 ? (
                     <div className="text-center py-12">
                       <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground">No sessions scheduled for {selectedDay}s</p>
+                      <p className="text-muted-foreground">No sessions scheduled on {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {getSessionsForDay(selectedDay).map((session) => (
-                        <SessionCard key={session.id} session={session} />
-                      ))}
+                      <div className="space-y-2">
+                        {getSessionsForDay(selectedDay).filter(session => {
+                          if (!session.date) return true; // Recurring
+                          // Compare with selectedDate
+                          return session.date === selectedDate.toLocaleDateString('en-CA');
+                        }).map((session) => (
+                          <SessionCard key={session.id} session={session} />
+                        ))}
+                      </div>
                     </div>
                   )}
                 </CardContent>

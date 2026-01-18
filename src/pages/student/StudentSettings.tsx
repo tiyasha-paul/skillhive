@@ -292,51 +292,7 @@ export default function StudentSettings() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Privacy & Security</CardTitle>
-              <CardDescription>Control visibility and data portability</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <p className="text-sm font-medium">Two-step login</p>
-                  <p className="text-xs text-muted-foreground">Adds OTP verification for every login</p>
-                </div>
-                <Switch
-                  checked={settings.privacy.twoStep}
-                  onCheckedChange={(checked) => updateSection('privacy', { twoStep: checked })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Profile visibility</Label>
-                <Select
-                  value={settings.privacy.visibility}
-                  onValueChange={(value: any) => updateSection('privacy', { visibility: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Who can view?" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mentor">Mentors only</SelectItem>
-                    <SelectItem value="all">Anyone in cohort</SelectItem>
-                    <SelectItem value="private">Only me</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Download profile data</Label>
-                <Textarea rows={2} placeholder="Optional note for export request" />
-                <Button variant="outline" size="sm">
-                  Generate export
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Button variant="secondary">Clear activity logs</Button>
-                <Button variant="outline">Manage saved data</Button>
-              </div>
-            </CardContent>
-          </Card>
+
 
           <Card>
             <CardHeader>

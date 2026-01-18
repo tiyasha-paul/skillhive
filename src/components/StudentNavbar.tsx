@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
-import { getUnreadCount, getNotifications, markAsRead, markAllAsRead, Notification } from '@/services/notifications';
+import { getUnreadCount, getNotifications, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications, Notification } from '@/services/notifications';
 import { SupportModal } from '@/components/SupportModal';
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useSessionMonitor } from '@/hooks/useSessionMonitor';
 
 export function StudentNavbar() {
   const navigate = useNavigate();
@@ -24,6 +25,9 @@ export function StudentNavbar() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Enable global session monitoring for missed alerts
+  useSessionMonitor();
 
   // loadNotifications stable via useCallback-like definition inside effect
   useEffect(() => {
@@ -64,6 +68,21 @@ export function StudentNavbar() {
       setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
       setUnreadCount(getUnreadCount(user.id));
     }
+  };
+
+
+
+  const handleClearAll = () => {
+    if (!user) return;
+    clearAllNotifications(user.id);
+    loadNotifications();
+  };
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Prevent clicking the notification itself
+    if (!user) return;
+    deleteNotification(user.id, id);
+    loadNotifications();
   };
 
   const handleMarkAllRead = () => {
@@ -177,7 +196,8 @@ export function StudentNavbar() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={() => navigate('/student/jobs')}>Browse Jobs</DropdownMenuItem>
+
+
                 <DropdownMenuItem onClick={() => navigate('/student/jobs#saved')}>Saved Jobs</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/student/jobs#resume')}>Resume Analysis</DropdownMenuItem>
               </DropdownMenuContent>
@@ -200,33 +220,48 @@ export function StudentNavbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80">
-                <div className="flex items-center justify-between p-2 border-b">
+                <div className="flex items-center justify-between p-2 border-b gap-2">
                   <h4 className="font-semibold text-sm">Notifications</h4>
-                  {unreadCount > 0 && (
-                    <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={handleMarkAllRead}>
-                      Mark all read
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {notifications.length > 0 && (
+                      <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground hover:text-foreground" onClick={handleClearAll}>
+                        Clear all
+                      </Button>
+                    )}
+                    {unreadCount > 0 && (
+                      <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={handleMarkAllRead}>
+                        Mark all read
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <ScrollArea className="h-96">
                   {notifications.length === 0 ? (
                     <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
                   ) : (
-                    <div className="divide-y">
+                    <div className="divide-y text-left">
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`p-3 cursor-pointer hover:bg-accent transition-colors ${!notification.read ? 'bg-accent/50' : ''}`}
+                          className={`group relative p-3 cursor-pointer hover:bg-accent transition-colors ${!notification.read ? 'bg-accent/50' : ''}`}
                           onClick={() => handleNotificationClick(notification)}
                         >
-                          <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start justify-between gap-2 pr-6">
                             <div className="flex-1">
                               <p className="text-sm font-medium">{notification.title}</p>
                               <p className="text-xs text-muted-foreground mt-1">{notification.message}</p>
                               <p className="text-xs text-muted-foreground mt-1">{new Date(notification.created_at).toLocaleString()}</p>
                             </div>
-                            {!notification.read && <div className="w-2 h-2 rounded-full bg-primary mt-1" />}
+                            {!notification.read && <div className="w-2 h-2 rounded-full bg-primary mt-1 flex-shrink-0" />}
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => handleDelete(e, notification.id!)}
+                          >
+                            <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                          </Button>
                         </div>
                       ))}
                     </div>

@@ -48,6 +48,19 @@ export function SessionForm({ open, onClose, onSubmit, initialData }: SessionFor
         notes: initialData.notes || '',
         color: initialData.color || generateColorForSubject(initialData.subject),
       });
+      if (initialData.date) {
+        setSelectByDate(true);
+        // initialData.date should be YYYY-MM-DD string
+        // Parse it carefully to local date
+        const parts = initialData.date.split('-');
+        if (parts.length === 3) {
+          const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+          setSelectedDate(date);
+        }
+      } else {
+        setSelectByDate(false);
+        setSelectedDate(undefined);
+      }
     } else {
       setFormData({
         subject: '',
@@ -59,6 +72,8 @@ export function SessionForm({ open, onClose, onSubmit, initialData }: SessionFor
         notes: '',
         color: '',
       });
+      setSelectByDate(false);
+      setSelectedDate(undefined);
     }
   }, [initialData, open]);
 
@@ -83,9 +98,21 @@ export function SessionForm({ open, onClose, onSubmit, initialData }: SessionFor
 
     const color = formData.color || generateColorForSubject(formData.subject);
 
+    // Format date if selected
+    let dateStr: string | undefined = undefined;
+    if (selectByDate && selectedDate) {
+      // Create date string in YYYY-MM-DD format manually to avoid timezone shifts
+      const offset = selectedDate.getTimezoneOffset();
+      const localDate = new Date(selectedDate.getTime() - (offset * 60 * 1000));
+      dateStr = localDate.toISOString().split('T')[0];
+    } else if (!selectByDate) {
+      dateStr = undefined; // Ensure date is cleared if toggle is off
+    }
+
     await onSubmit({
       ...formData,
       color,
+      date: dateStr,
     });
 
     onClose();

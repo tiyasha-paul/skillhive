@@ -100,6 +100,9 @@ export async function createTimetableSession(
     if (session.notes) {
       insertData.notes = session.notes;
     }
+    if (session.date) {
+      insertData.date = session.date;
+    }
 
     const { data, error } = await supabase
       .from('timetable_sessions')
@@ -146,6 +149,7 @@ export async function updateTimetableSession(
     if (updates.color !== undefined) updateData.color = updates.color;
     if (updates.topic !== undefined) updateData.topic = updates.topic;
     if (updates.notes !== undefined) updateData.notes = updates.notes;
+    if (updates.date !== undefined) updateData.date = updates.date;
 
     const { data, error } = await supabase
       .from('timetable_sessions')

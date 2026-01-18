@@ -268,7 +268,7 @@ export default function StudentStudyNotes() {
 
                       <div className="flex items-center justify-between mt-auto pt-4 border-t">
                         <span className="text-xs text-muted-foreground">
-                          {new Date(note.updatedAt || new Date()).toLocaleDateString()}
+                          {new Date(note.updatedAt || new Date()).toLocaleDateString('en-GB')}
                         </span>
                         <div className="flex gap-2">
                           <Button
@@ -455,7 +455,7 @@ export default function StudentStudyNotes() {
 
                 <div className="flex justify-between items-center pt-4 border-t">
                   <span className="text-xs text-muted-foreground">
-                    Last updated: {viewingNote.updatedAt ? new Date(viewingNote.updatedAt).toLocaleDateString() : 'N/A'}
+                    Last updated: {viewingNote.updatedAt ? new Date(viewingNote.updatedAt).toLocaleDateString('en-GB') : 'N/A'}
                   </span>
                   <div className="flex gap-2">
                     {viewingNote.category === 'personal' && (

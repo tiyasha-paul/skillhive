@@ -86,7 +86,7 @@ export async function getMentorStudents(mentorId: string): Promise<Student[]> {
         // Get quiz results for this student (from localStorage for now)
         // In production, this should come from database
         const quizResults = getQuizResultsForStudent(profile.id);
-        
+
         const progress = calculateProgress(quizResults);
         const accuracy = calculateAccuracy(quizResults);
         const weakAreas = getWeakAreasForStudent(quizResults);
@@ -142,7 +142,7 @@ export async function getStudentReport(studentId: string): Promise<StudentReport
 
     // Get quiz results
     const quizResults = getQuizResultsForStudent(studentId);
-    
+
     const progress = calculateProgress(quizResults);
     const accuracy = calculateAccuracy(quizResults);
     const weakAreas = getWeakAreasForStudent(quizResults);
@@ -214,7 +214,7 @@ function calculateAccuracy(results: QuizResult[]): number {
 
 function getWeakAreasForStudent(results: QuizResult[]): string[] {
   const topicMap: { [key: string]: { correct: number; total: number } } = {};
-  
+
   results.forEach(result => {
     Object.entries(result.topicStats).forEach(([topic, stats]) => {
       if (!topicMap[topic]) {
@@ -235,11 +235,11 @@ function getLastActiveTime(studentId: string, results: QuizResult[]): string {
   if (results.length === 0) {
     return 'Never';
   }
-  
-  const latestResult = results.sort((a, b) => 
+
+  const latestResult = results.sort((a, b) =>
     new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
   )[0];
-  
+
   const lastActive = new Date(latestResult.completedAt);
   const now = new Date();
   const diffMs = now.getTime() - lastActive.getTime();
@@ -307,7 +307,7 @@ function getQuizPerformanceData(results: QuizResult[]): {
     .slice(-10); // Last 10 quizzes
 
   return {
-    labels: sorted.map(r => new Date(r.completedAt).toLocaleDateString()),
+    labels: sorted.map(r => new Date(r.completedAt).toLocaleDateString('en-GB')),
     accuracy: sorted.map(r => r.accuracy),
     scores: sorted.map(r => r.totalScore),
   };
@@ -319,7 +319,7 @@ function getDifficultyDistribution(results: QuizResult[]): {
   hard: number;
 } {
   const distribution = { easy: 0, medium: 0, hard: 0 };
-  
+
   results.forEach(result => {
     distribution.easy += result.difficultyStats.easy.total;
     distribution.medium += result.difficultyStats.medium.total;

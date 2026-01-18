@@ -110,10 +110,10 @@ export default function StudentProfile() {
           year: extendedProfile.year || '',
           phone: extendedProfile.phone || '',
           joinDate: dbProfile?.created_at
-            ? new Date(dbProfile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            ? new Date(dbProfile.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
             : '',
           lastLogin: user?.last_sign_in_at
-            ? new Date(user.last_sign_in_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+            ? new Date(user.last_sign_in_at).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true })
             : 'First Login',
           github: extendedProfile.github || '',
           linkedin: extendedProfile.linkedin || '',
@@ -219,7 +219,7 @@ export default function StudentProfile() {
         // For now, we'll use a simplified approach
         if (activity === 'video_watched') {
           videoActivities.push({
-            title: `Video watched on ${new Date(record.date).toLocaleDateString()}`,
+            title: `Video watched on ${new Date(record.date).toLocaleDateString('en-GB')}`,
             date: record.date,
           });
         }
@@ -323,7 +323,7 @@ export default function StudentProfile() {
       const appliedJobs = JSON.parse(localStorage.getItem('appliedJobs') || '[]');
 
       const lastApplied = appliedJobs.length > 0
-        ? new Date(appliedJobs[appliedJobs.length - 1].appliedAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        ? new Date(appliedJobs[appliedJobs.length - 1].appliedAt || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
         : 'Never';
 
       return {
@@ -419,7 +419,7 @@ export default function StudentProfile() {
 
           <h1 className="text-3xl font-semibold text-foreground">Hey {profile.fullName.split(' ')[0] || 'Student'}, keep the momentum alive!</h1>
           <p className="text-muted-foreground">
-            Edit details, track learning, monitor achievements, and stay job-ready — all powered by real-time adaptive signals.
+            Manage your personal profile, track your academic progress, view your achievements, and review your study insights.
           </p>
         </header>
 
@@ -428,7 +428,7 @@ export default function StudentProfile() {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle>Profile Overview</CardTitle>
-                <CardDescription>Live view of your learner identity</CardDescription>
+                <CardDescription>View and manage your personal details</CardDescription>
               </div>
               <Dialog open={isEditing} onOpenChange={setIsEditing}>
                 <DialogTrigger asChild>
@@ -563,7 +563,7 @@ export default function StudentProfile() {
               <div className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle>Live Achievements</CardTitle>
-                  <CardDescription>Your gamified growth trail</CardDescription>
+                  <CardDescription>Track your XP progress</CardDescription>
                 </div>
                 <HoverCard>
                   <HoverCardTrigger asChild>
@@ -641,7 +641,7 @@ export default function StudentProfile() {
           <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
             <CardHeader>
               <CardTitle>Learning Statistics</CardTitle>
-              <CardDescription>Mastery, difficulty trends, focus signals</CardDescription>
+              <CardDescription>Analyze your subject mastery and conceptual understanding</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -703,7 +703,7 @@ export default function StudentProfile() {
           <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
             <CardHeader>
               <CardTitle>Study & Quiz Insights</CardTitle>
-              <CardDescription>Time on task and accuracy trends</CardDescription>
+              <CardDescription>Review your study habits and performance metrics</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 sm:grid-cols-3">
@@ -809,7 +809,7 @@ export default function StudentProfile() {
           <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
             <CardHeader>
               <CardTitle>Video Watch History</CardTitle>
-              <CardDescription>Resume where you left off</CardDescription>
+              <CardDescription>Access your recently watched educational videos</CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-72 pr-4">
@@ -837,7 +837,7 @@ export default function StudentProfile() {
             <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
               <CardHeader>
                 <CardTitle>Mentor Summary</CardTitle>
-                <CardDescription>Active batches and alerts</CardDescription>
+                <CardDescription>Overview of your students and their performance</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -874,7 +874,7 @@ export default function StudentProfile() {
             <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
               <CardHeader>
                 <CardTitle>Job Application Summary</CardTitle>
-                <CardDescription>Track applications and recommendations</CardDescription>
+                <CardDescription>Monitor your job applications and saved opportunities</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -895,9 +895,6 @@ export default function StudentProfile() {
                     <p className="text-base font-semibold">{jobInsights.lastApplied}</p>
                   </div>
                 </div>
-                <Button variant="secondary" className="w-full">
-                  View job board
-                </Button>
               </CardContent>
             </Card>
           )}

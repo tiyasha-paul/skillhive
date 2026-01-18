@@ -757,10 +757,10 @@ export default function StudentTimetable() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="font-semibold text-sm">
-                  {currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {(() => {
+                  {currentWeekStart.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} - {(() => {
                     const end = new Date(currentWeekStart);
                     end.setDate(currentWeekStart.getDate() + 6);
-                    return end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    return end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
                   })()}
                 </span>
                 <Button variant="outline" size="sm" onClick={() => moveWeek('next')}>
@@ -877,7 +877,7 @@ export default function StudentTimetable() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="font-semibold text-sm">
-                  {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  {selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </span>
                 <Button variant="outline" size="sm" onClick={() => {
                   setSelectedDate((prev) => {
@@ -906,7 +906,7 @@ export default function StudentTimetable() {
                 <CardTitle className="flex items-center gap-2">
                   {selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}
                   <span className="text-sm font-normal text-muted-foreground">
-                    ({selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })})
+                    ({selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })})
                   </span>
                 </CardTitle>
                 <CardDescription>
@@ -926,7 +926,7 @@ export default function StudentTimetable() {
                 }).length === 0 ? (
                   <div className="text-center py-12">
                     <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">No sessions scheduled on {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                    <p className="text-muted-foreground">No sessions scheduled on {selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -978,7 +978,7 @@ export default function StudentTimetable() {
               <Card className="flex-1">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    Sessions for {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                    Sessions for {selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}
 
                   </CardTitle>
                 </CardHeader>
@@ -986,7 +986,7 @@ export default function StudentTimetable() {
                   {getSessionsForDay(selectedDay).length === 0 ? (
                     <div className="text-center py-12">
                       <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground">No sessions scheduled on {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                      <p className="text-muted-foreground">No sessions scheduled on {selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     </div>
                   ) : (
                     <div className="space-y-2">

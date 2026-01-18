@@ -180,6 +180,23 @@ Languages: ${data.languages.join(', ')}
   };
 
   const JobCard = ({ job }: { job: JobResult }) => {
+    // Helper to format date consistent with application standards (dd/mm/yyyy)
+    const formatJobDate = (dateStr?: string) => {
+      if (!dateStr) return '';
+      // If relative time string, return as is
+      if (dateStr.toLowerCase().includes('ago') || dateStr.toLowerCase().includes('recently')) {
+        return dateStr;
+      }
+
+      const date = new Date(dateStr);
+      // If valid date, format to en-GB
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+
+      return dateStr;
+    };
+
     const companyName = extractCompanyName(job);
     const jobType = extractJobType(job, searchParams);
     const workType = extractWorkType(job, searchParams);
@@ -221,7 +238,7 @@ Languages: ${data.languages.join(', ')}
               {job.posted_date && (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                   <Clock className="h-3 w-3" />
-                  {job.posted_date}
+                  {formatJobDate(job.posted_date)}
                 </div>
               )}
             </div>
@@ -281,7 +298,7 @@ Languages: ${data.languages.join(', ')}
                   {job.posted_date && (
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Clock className="h-4 w-4" />
-                      Posted: {job.posted_date}
+                      Posted: {formatJobDate(job.posted_date)}
                     </div>
                   )}
                   <Button

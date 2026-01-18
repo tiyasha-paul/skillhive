@@ -68,7 +68,7 @@ export async function searchJobs(params: JobSearchParams, startIndex: number = 1
         experience_level: params.experienceLevel, // JSearch doesn't always return this cleanly, fallback to search param
         salary_range: j.job_min_salary ? `${j.job_min_salary}-${j.job_max_salary} ${j.job_salary_currency}` : undefined,
         industry: j.job_job_title,
-        posted_date: j.job_posted_at_datetime_utc ? new Date(j.job_posted_at_datetime_utc).toLocaleDateString() : 'Recently',
+        posted_date: j.job_posted_at_datetime_utc ? new Date(j.job_posted_at_datetime_utc).toLocaleDateString('en-GB') : 'Recently',
         link: j.job_apply_link,
         snippet: j.job_description ? j.job_description.substring(0, 200) + '...' : '',
         displayLink: j.employer_website || j.employer_name
@@ -123,7 +123,7 @@ Generate realistic job postings that would be found on reputable job sites like 
       "experience_level": "Entry Level" or "Mid Senior Level" or "Director" (if available),
       "salary_range": "Salary range if available (e.g., ₹5,00,000 - ₹10,00,000)",
       "industry": "Industry name if available",
-      "posted_date": "Date or 'X days ago' if available"
+      "posted_date": "Date (dd/mm/yyyy) or 'X days ago' if available"
     }
   ]
 }

@@ -129,7 +129,7 @@ export function ActivityHeatmap() {
   const formatDate = (dateStr: string): string => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('en-GB', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',

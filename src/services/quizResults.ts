@@ -197,7 +197,7 @@ export function getProgressOverTime(): ProgressDataPoint[] {
   return results
     .sort((a, b) => new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime())
     .map(result => ({
-      date: new Date(result.completedAt).toLocaleDateString(),
+      date: new Date(result.completedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
       score: result.totalScore,
       accuracy: result.accuracy,
       timeEfficiency: result.totalTime > 0 ? (result.answers.length / (result.totalTime / 60)) : 0,

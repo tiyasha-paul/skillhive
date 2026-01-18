@@ -35,7 +35,7 @@ export function GoalList({
                         <div className="flex items-baseline gap-2">
                             <CardTitle>Today's Goals</CardTitle>
                             <span className="text-xs text-muted-foreground font-normal">
-                                {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </span>
                         </div>
                         <CardDescription>

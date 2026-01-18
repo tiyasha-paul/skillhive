@@ -38,7 +38,7 @@ export function QuickActions({ onTakeQuiz }: QuickActionsProps) {
 
     return (
         <>
-            <Card className="border-none bg-transparent shadow-none">
+            <Card className="border-none bg-transparent shadow-none hover:shadow-none">
                 <CardHeader className="px-0 pt-0">
                     <CardTitle className="text-xl">Quick Actions</CardTitle>
                     <CardDescription>What's on the agenda today?</CardDescription>

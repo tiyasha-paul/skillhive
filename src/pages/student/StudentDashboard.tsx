@@ -353,7 +353,7 @@ export default function StudentDashboard() {
 
                 <div className="flex flex-col gap-6">
                   {/* Strong Topics */}
-                  <Card className="border-none shadow-sm bg-gradient-to-br from-green-50/50 to-transparent dark:from-green-950/10 h-full">
+                  <Card className="bg-gradient-to-br from-green-50/50 to-transparent dark:from-green-950/10 h-full">
                     <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
                       <CardTitle className="text-base flex items-center gap-2 text-green-700 dark:text-green-400">
                         <Award className="h-4 w-4" />
@@ -412,7 +412,7 @@ export default function StudentDashboard() {
                   </Card>
 
                   {/* Average Topics */}
-                  <Card className="border-none shadow-sm bg-gradient-to-br from-yellow-50/50 to-transparent dark:from-yellow-950/10 h-full">
+                  <Card className="bg-gradient-to-br from-yellow-50/50 to-transparent dark:from-yellow-950/10 h-full">
                     <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
                       <CardTitle className="text-base flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
                         <Target className="h-4 w-4" />
@@ -471,7 +471,7 @@ export default function StudentDashboard() {
                   </Card>
 
                   {/* Weak Topics */}
-                  <Card className="border-none shadow-sm bg-gradient-to-br from-red-50/50 to-transparent dark:from-red-950/10 h-full">
+                  <Card className="bg-gradient-to-br from-red-50/50 to-transparent dark:from-red-950/10 h-full">
                     <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
                       <CardTitle className="text-base flex items-center gap-2 text-red-700 dark:text-red-400">
                         <AlertCircle className="h-4 w-4" />
@@ -558,7 +558,7 @@ export default function StudentDashboard() {
                               </div>
                               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {videos.slice(0, 3).map((video) => (
-                                  <Card key={video.id.videoId} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all group bg-card/50 backdrop-blur-sm">
+                                  <Card key={video.id.videoId} className="overflow-hidden group bg-card/50 backdrop-blur-sm">
                                     <div className="relative aspect-video bg-muted overflow-hidden">
                                       <img
                                         src={video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium.url}

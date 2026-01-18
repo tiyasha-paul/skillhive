@@ -38,15 +38,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
 
-const notificationKeys = [
-  'studyReminders',
-  'quizAlerts',
-  'fatigueAlerts',
-  'jobRecs',
-  'newVideos',
-  'chatbotUpdates',
-  'systemAnnouncements',
-] as const;
+
 
 export default function StudentSettings() {
   const { user, signOut } = useAuth();
@@ -65,7 +57,6 @@ export default function StudentSettings() {
   /* Extension Settings State */
   const [extensionDetected, setExtensionDetected] = useState(false);
   const [alertSettings, setAlertSettings] = useState({
-    enabled: true,
     enabled: true,
     intervalValue: '5',
     intervalUnit: 'minutes'
@@ -158,9 +149,7 @@ export default function StudentSettings() {
     }
   };
 
-  const handleNotificationToggle = (key: (typeof notificationKeys)[number]) => {
-    updateSection('notifications', { [key]: !settings.notifications[key] });
-  };
+
 
   const handleLearningChange = (key: keyof typeof settings.learning, value: string) => {
     updateSection('learning', { [key]: value });
@@ -188,7 +177,7 @@ export default function StudentSettings() {
         </header>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
+          <Card className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
             <CardHeader>
               <CardTitle>Account Settings</CardTitle>
               <CardDescription>Identity and credentials</CardDescription>
@@ -261,187 +250,97 @@ export default function StudentSettings() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Settings</CardTitle>
-              <CardDescription>Toggle alerts that matter to you</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {notificationKeys.map((key) => (
-                <div key={key} className="flex items-center justify-between rounded-lg border p-3">
+          <div className="space-y-6">
+            <Card className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle>Notification Settings</CardTitle>
+                <CardDescription>Manage your alerts</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between rounded-lg border p-3">
                   <div>
-                    <p className="text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                    <p className="text-sm font-medium">Timetable Notifications</p>
                     <p className="text-xs text-muted-foreground">
-                      {key === 'studyReminders' && 'Stay on top of planned study blocks'}
-                      {key === 'quizAlerts' && 'Know when adaptive quizzes unlock'}
-                      {key === 'fatigueAlerts' && 'Adaptive fatigue + burnout signals'}
-                      {key === 'jobRecs' && 'New roles tailored to your skill graph'}
-                      {key === 'newVideos' && 'Fresh lecture drops in your playlists'}
-                      {key === 'chatbotUpdates' && 'Chatbot pushes + new AI helpers'}
-                      {key === 'systemAnnouncements' && 'Platform notices & planned downtime'}
+                      Get reminders for upcoming sessions and schedule changes
                     </p>
                   </div>
                   <Switch
-                    checked={settings.notifications[key]}
-                    onCheckedChange={(checked) => handleNotificationToggle(key)}
+                    checked={settings.notifications.timetableNotifications}
+                    onCheckedChange={(checked) => updateSection('notifications', { timetableNotifications: checked })}
                   />
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Learning Preferences</CardTitle>
-              <CardDescription>Tell the platform how you like to learn</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Preferred format</Label>
-                <Select
-                  value={settings.learning.format}
-                  onValueChange={(value: any) => handleLearningChange('format', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="videos">Videos</SelectItem>
-                    <SelectItem value="notes">Notes</SelectItem>
-                    <SelectItem value="podcasts">Podcasts</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Difficulty preference</Label>
-                <Select
-                  value={settings.learning.difficulty}
-                  onValueChange={(value: any) => handleLearningChange('difficulty', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select difficulty" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="hard">Hard</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Daily study target</Label>
-                <Input
-                  value={settings.learning.dailyTime}
-                  onChange={(e) => handleLearningChange('dailyTime', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Quiz mode</Label>
-                <Select
-                  value={settings.learning.quizMode}
-                  onValueChange={(value: any) => handleLearningChange('quizMode', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="adaptive">Adaptive</SelectItem>
-                    <SelectItem value="timed">Timed</SelectItem>
-                    <SelectItem value="practice">Practice</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>AI explanations</Label>
-                <Select
-                  value={settings.learning.aiExplain}
-                  onValueChange={(value: any) => handleLearningChange('aiExplain', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="simple">Simple</SelectItem>
-                    <SelectItem value="detailed">Detailed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-
-
-        <div className="grid gap-6 lg:grid-cols-1">
-          <Card className={`border-blue-500/20 bg-blue-50/10 dark:bg-blue-900/10 ${!extensionDetected ? 'opacity-80' : ''}`}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Extension Settings
-                {extensionDetected ? (
-                  <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Active</span>
-                ) : (
-                  <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">Not Detected</span>
+            <Card className={`bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800 ${!extensionDetected ? 'opacity-80' : ''}`}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  Extension Settings
+                  {extensionDetected ? (
+                    <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Active</span>
+                  ) : (
+                    <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">Not Detected</span>
+                  )}
+                </CardTitle>
+                <CardDescription>Configure how the browser extension interacts with you</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!extensionDetected && (
+                  <Alert className="bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800/50 mb-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Extension not responding?</AlertTitle>
+                    <AlertDescription>
+                      If you recently reloaded the extension, please <strong>refresh this page</strong> to reconnect.
+                    </AlertDescription>
+                  </Alert>
                 )}
-              </CardTitle>
-              <CardDescription>Configure how the browser extension interacts with you</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!extensionDetected && (
-                <Alert className="bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800/50 mb-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Extension not responding?</AlertTitle>
-                  <AlertDescription>
-                    If you recently reloaded the extension, please <strong>refresh this page</strong> to reconnect.
-                  </AlertDescription>
-                </Alert>
-              )}
 
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <p className="text-sm font-medium">Distraction Alerts</p>
-                  <p className="text-xs text-muted-foreground">Get notified when you spend too much time on distracting sites</p>
-                </div>
-                <Switch checked={alertSettings.enabled} onCheckedChange={(checked) => handleAlertSettingChange('enabled', checked)} disabled={!extensionDetected} />
-              </div>
-
-              {alertSettings.enabled && (
-                <div className="space-y-2">
-                  <Label>Alert Frequency</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      min="1"
-                      value={alertSettings.intervalValue}
-                      onChange={(e) => handleAlertSettingChange('intervalValue', e.target.value)}
-                      disabled={!extensionDetected}
-                      className="w-[120px]"
-                    />
-                    <Select
-                      value={alertSettings.intervalUnit}
-                      onValueChange={(value) => handleAlertSettingChange('intervalUnit', value)}
-                      disabled={!extensionDetected}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="seconds">Seconds</SelectItem>
-                        <SelectItem value="minutes">Minutes</SelectItem>
-                        <SelectItem value="hours">Hours</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <div>
+                    <p className="text-sm font-medium">Distraction Alerts</p>
+                    <p className="text-xs text-muted-foreground">Get notified when you spend too much time on distracting sites</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    You will receive a system notification every {alertSettings.intervalValue} {alertSettings.intervalUnit} while on a distraction site.
-                  </p>
+                  <Switch checked={alertSettings.enabled} onCheckedChange={(checked) => handleAlertSettingChange('enabled', checked)} disabled={!extensionDetected} />
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                {alertSettings.enabled && (
+                  <div className="space-y-2">
+                    <Label>Alert Frequency</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={alertSettings.intervalValue}
+                        onChange={(e) => handleAlertSettingChange('intervalValue', e.target.value)}
+                        disabled={!extensionDetected}
+                        className="w-[120px]"
+                      />
+                      <Select
+                        value={alertSettings.intervalUnit}
+                        onValueChange={(value) => handleAlertSettingChange('intervalUnit', value)}
+                        disabled={!extensionDetected}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="seconds">Seconds</SelectItem>
+                          <SelectItem value="minutes">Minutes</SelectItem>
+                          <SelectItem value="hours">Hours</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      You will receive a system notification every {alertSettings.intervalValue} {alertSettings.intervalUnit} while on a distraction site.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
+
+
 
         <Card>
           <CardHeader>

@@ -3,13 +3,7 @@ import { useState, useEffect } from 'react';
 // Define the shape of our settings
 export interface StudentSettings {
     notifications: {
-        studyReminders: boolean;
-        quizAlerts: boolean;
-        fatigueAlerts: boolean;
-        jobRecs: boolean;
-        newVideos: boolean;
-        chatbotUpdates: boolean;
-        systemAnnouncements: boolean;
+        timetableNotifications: boolean;
     };
     privacy: {
         twoStep: boolean;
@@ -43,13 +37,7 @@ export interface StudentSettings {
 
 const DEFAULT_SETTINGS: StudentSettings = {
     notifications: {
-        studyReminders: true,
-        quizAlerts: true,
-        fatigueAlerts: false,
-        jobRecs: true,
-        newVideos: true,
-        chatbotUpdates: true,
-        systemAnnouncements: true,
+        timetableNotifications: true,
     },
     privacy: {
         twoStep: true,

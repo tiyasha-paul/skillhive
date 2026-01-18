@@ -47,10 +47,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { getSyncEnabled, setSyncEnabled } from '@/services/syncSettings';
+import { useStudentSettings } from '@/hooks/useStudentSettings';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 export default function StudentTimetable() {
   const { user } = useAuth();
+  const { settings } = useStudentSettings();
   const [sessions, setSessions] = useState<TimetableSession[]>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<TimetableSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,7 +167,7 @@ export default function StudentTimetable() {
       const minutesUntil = Math.floor((sessionStart.getTime() - now.getTime()) / 60000);
 
       // 10 minutes before reminder
-      if (minutesUntil === 10) {
+      if (minutesUntil === 10 && settings.notifications.timetableNotifications) {
         await notifyReminder(user.id, session, 10);
         toast.info(`Reminder: ${session.subject} starts in 10 minutes!`, {
           description: `Time: ${formatTime(session.start_time)}`,
@@ -173,7 +175,7 @@ export default function StudentTimetable() {
       }
 
       // 2 minutes before reminder
-      if (minutesUntil === 2) {
+      if (minutesUntil === 2 && settings.notifications.timetableNotifications) {
         await notifyReminder(user.id, session, 2);
         toast.warning(`Reminder: ${session.subject} starts in 2 minutes!`, {
           description: `Time: ${formatTime(session.start_time)}`,
@@ -208,7 +210,7 @@ export default function StudentTimetable() {
     const todaySessions = sessions.filter(s => s.day === todayDay);
 
     const lastSummary = localStorage.getItem(`daily_summary_${user.id}_${today.toDateString()}`);
-    if (!lastSummary && todaySessions.length > 0) {
+    if (!lastSummary && todaySessions.length > 0 && settings.notifications.timetableNotifications) {
       await notifyDailySummary(user.id, todaySessions);
       localStorage.setItem(`daily_summary_${user.id}_${today.toDateString()}`, 'true');
     }
@@ -273,7 +275,9 @@ export default function StudentTimetable() {
         });
 
         // Notification center
-        await notifyTimetableEvent(user.id, 'created', session);
+        if (settings.notifications.timetableNotifications) {
+          await notifyTimetableEvent(user.id, 'created', session);
+        }
 
         // Trigger real-time update event
         window.dispatchEvent(new CustomEvent('timetable-updated'));
@@ -333,7 +337,9 @@ export default function StudentTimetable() {
       });
 
       // Notification center
-      await notifyTimetableEvent(user.id, 'updated', updated);
+      if (settings.notifications.timetableNotifications) {
+        await notifyTimetableEvent(user.id, 'updated', updated);
+      }
 
       // Trigger real-time update event
       window.dispatchEvent(new CustomEvent('timetable-updated'));
@@ -397,7 +403,9 @@ export default function StudentTimetable() {
       });
 
       // Notification center
-      await notifyTimetableEvent(user.id, 'deleted', deletingSession);
+      if (settings.notifications.timetableNotifications) {
+        await notifyTimetableEvent(user.id, 'deleted', deletingSession);
+      }
 
       // Trigger real-time update event
       window.dispatchEvent(new CustomEvent('timetable-updated'));
@@ -446,7 +454,7 @@ export default function StudentTimetable() {
         description: `Great job completing your ${session.subject} session!`,
       });
 
-      if (user) {
+      if (user && settings.notifications.timetableNotifications) {
         await createNotification(user.id, {
           type: 'timetable',
           title: 'Session Completed',

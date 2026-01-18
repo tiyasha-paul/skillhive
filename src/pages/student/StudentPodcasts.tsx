@@ -112,7 +112,7 @@ export default function StudentPodcasts() {
 
   // Use consistent blue color scheme for all cards (matching Coding Interview Prep style)
   const getColorClasses = () => {
-    return 'bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50';
+    return 'bg-card border-border hover:shadow-md';
   };
 
   return (
@@ -136,7 +136,7 @@ export default function StudentPodcasts() {
           <>
             {/* Continue Listening Section */}
             {lastPlayed && lastPlayed.progress.currentTime > 0 && (
-              <Card className="mb-6 bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800">
+              <Card className="mb-6">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -241,7 +241,7 @@ export default function StudentPodcasts() {
               <h2 className="text-2xl font-bold mb-4">
                 Convert Any YouTube Video to Podcast
               </h2>
-              <Card className="border-dashed border-2 bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800">
+              <Card className="border-dashed border-2">
                 <CardHeader className="pb-3">
                   <CardDescription>
                     Paste a YouTube link below to listen to it in audio-only format

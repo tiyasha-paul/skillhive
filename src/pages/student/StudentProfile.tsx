@@ -424,7 +424,7 @@ export default function StudentProfile() {
         </header>
 
         <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-          <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle>Profile Overview</CardTitle>
@@ -558,7 +558,7 @@ export default function StudentProfile() {
             </CardContent>
           </Card>
 
-          <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+          <Card>
             <CardHeader>
               <div className="flex flex-row items-center justify-between">
                 <div>
@@ -638,7 +638,7 @@ export default function StudentProfile() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+          <Card>
             <CardHeader>
               <CardTitle>Learning Statistics</CardTitle>
               <CardDescription>Analyze your subject mastery and conceptual understanding</CardDescription>
@@ -700,7 +700,7 @@ export default function StudentProfile() {
             </CardContent>
           </Card>
 
-          <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+          <Card>
             <CardHeader>
               <CardTitle>Study & Quiz Insights</CardTitle>
               <CardDescription>Review your study habits and performance metrics</CardDescription>
@@ -806,7 +806,7 @@ export default function StudentProfile() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+          <Card>
             <CardHeader>
               <CardTitle>Video Watch History</CardTitle>
               <CardDescription>Access your recently watched educational videos</CardDescription>
@@ -834,7 +834,7 @@ export default function StudentProfile() {
           </Card>
 
           {userRole === 'mentor' ? (
-            <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+            <Card>
               <CardHeader>
                 <CardTitle>Mentor Summary</CardTitle>
                 <CardDescription>Overview of your students and their performance</CardDescription>
@@ -871,7 +871,7 @@ export default function StudentProfile() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+            <Card>
               <CardHeader>
                 <CardTitle>Job Application Summary</CardTitle>
                 <CardDescription>Monitor your job applications and saved opportunities</CardDescription>

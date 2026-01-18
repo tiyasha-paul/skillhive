@@ -12,7 +12,7 @@ interface LearningProgressProps {
 
 export function LearningProgress({ performance }: LearningProgressProps) {
     return (
-        <Card className="rounded-2xl border bg-card/50 backdrop-blur-sm shadow-sm transition-all hover:shadow-md">
+        <Card className="rounded-2xl border shadow-sm transition-all hover:shadow-md">
             <CardHeader>
                 <CardTitle>Learning Progress</CardTitle>
                 <CardDescription>Mastery across your subjects</CardDescription>

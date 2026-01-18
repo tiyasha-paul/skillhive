@@ -28,7 +28,7 @@ export function GoalList({
     const completedCount = goals.filter(g => g.completed).length;
 
     return (
-        <Card className="rounded-2xl border bg-card/50 backdrop-blur-sm shadow-sm">
+        <Card className="rounded-2xl border shadow-sm">
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>

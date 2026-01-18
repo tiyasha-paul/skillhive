@@ -66,7 +66,9 @@ export default function StudentSettings() {
   const [extensionDetected, setExtensionDetected] = useState(false);
   const [alertSettings, setAlertSettings] = useState({
     enabled: true,
-    interval: '5', // minutes
+    enabled: true,
+    intervalValue: '5',
+    intervalUnit: 'minutes'
   });
 
   useEffect(() => {
@@ -106,7 +108,7 @@ export default function StudentSettings() {
 
     toast({
       title: "Extension Settings Updated",
-      description: `Distraction alerts set to every ${newSettings.interval} minutes.`
+      description: `Distraction alerts set to every ${newSettings.intervalValue} ${newSettings.intervalUnit}.`
     });
   };
 
@@ -452,20 +454,32 @@ export default function StudentSettings() {
               {alertSettings.enabled && (
                 <div className="space-y-2">
                   <Label>Alert Frequency</Label>
-                  <Select value={alertSettings.interval} onValueChange={(value) => handleAlertSettingChange('interval', value)} disabled={!extensionDetected}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Every 1 minute (Strict)</SelectItem>
-                      <SelectItem value="3">Every 3 minutes</SelectItem>
-                      <SelectItem value="5">Every 5 minutes</SelectItem>
-                      <SelectItem value="10">Every 10 minutes</SelectItem>
-                      <SelectItem value="15">Every 15 minutes</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min="1"
+                      value={alertSettings.intervalValue}
+                      onChange={(e) => handleAlertSettingChange('intervalValue', e.target.value)}
+                      disabled={!extensionDetected}
+                      className="w-[120px]"
+                    />
+                    <Select
+                      value={alertSettings.intervalUnit}
+                      onValueChange={(value) => handleAlertSettingChange('intervalUnit', value)}
+                      disabled={!extensionDetected}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="seconds">Seconds</SelectItem>
+                        <SelectItem value="minutes">Minutes</SelectItem>
+                        <SelectItem value="hours">Hours</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    You will receive a system notification every {alertSettings.interval} minutes while on a distraction site.
+                    You will receive a system notification every {alertSettings.intervalValue} {alertSettings.intervalUnit} while on a distraction site.
                   </p>
                 </div>
               )}

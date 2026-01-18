@@ -43,7 +43,7 @@ function categorizeUrl(url) {
             return 'Learning';
         }
 
-        if (hostname.includes('youtube.com') || hostname.includes('spotify.com')) {
+        if (hostname.includes('youtube.com') || hostname.includes('spotify.com') || hostname === 'open.spotify.com') {
             return 'Mixed'; // Could be learning or distraction
         }
 
@@ -106,8 +106,14 @@ function checkDistractionAlert(category) {
             return;
         }
 
-        const intervalMinutes = parseInt(settings.interval) || 5;
-        const intervalMs = intervalMinutes * 60 * 1000;
+        const intervalValue = parseInt(settings.intervalValue) || parseInt(settings.interval) || 5;
+        const intervalUnit = settings.intervalUnit || 'minutes';
+
+        let multiplier = 60 * 1000; // default minutes
+        if (intervalUnit === 'seconds') multiplier = 1000;
+        if (intervalUnit === 'hours') multiplier = 60 * 60 * 1000;
+
+        const intervalMs = intervalValue * multiplier;
 
         // Check if enough time has passed since last alert
         if (state.lastAlertTime && (now - state.lastAlertTime >= intervalMs)) {
@@ -116,7 +122,7 @@ function checkDistractionAlert(category) {
                 type: 'basic',
                 iconUrl: 'icons/icon128.png',
                 title: 'Distraction Alert!',
-                message: `You've been on ${category} sites for over ${intervalMinutes} minutes. Time to refocus?`,
+                message: `You've been on ${category} sites for over ${intervalValue} ${intervalUnit}. Time to refocus?`,
                 priority: 2
             });
 
@@ -126,7 +132,7 @@ function checkDistractionAlert(category) {
                     console.log('Sending alert to tab:', tabs[0].url);
                     chrome.tabs.sendMessage(tabs[0].id, {
                         type: 'SHOW_ALERT',
-                        message: `You've been on ${category} sites for over ${intervalMinutes} minutes. Time to refocus?`
+                        message: `You've been on ${category} sites for over ${intervalValue} ${intervalUnit}. Time to refocus?`
                     }).catch(err => console.log('Could not send alert to tab (content script might be missing):', err));
                 }
             });
@@ -136,6 +142,8 @@ function checkDistractionAlert(category) {
         }
     });
 }
+
+let preciseTimer = null;
 
 // Helper to handle distraction state updates
 function updateDistractionState(category, now) {
@@ -149,11 +157,32 @@ function updateDistractionState(category, now) {
                 // Start tracking
                 chrome.storage.local.set({ distractionState: { startTime: now, lastAlertTime: now } });
             }
-            // If already started, do nothing (keep counting)
+
+            // Ensure precise timer is running if we are distracted
+            if (!preciseTimer) {
+                // Check every 1 second for high precision
+                preciseTimer = setInterval(() => {
+                    chrome.storage.local.get(['activityLog'], () => {
+                        // Just reading to keep SW alive? No, we call the check directly.
+                        // But we need the category. We can't easily get it here without activeTabUrl global.
+                        // Let's rely on the global activeTabUrl which is updated by listeners.
+                        if (activeTabUrl) {
+                            const currentCategory = categorizeUrl(activeTabUrl, activeTabTitle); // Re-evaluate
+                            checkDistractionAlert(currentCategory);
+                        }
+                    });
+                }, 1000);
+            }
+
         } else {
             // Safe category -> Reset timer if it was running
             if (state.startTime) {
                 chrome.storage.local.set({ distractionState: { startTime: null, lastAlertTime: null } });
+            }
+            // Stop the precise timer
+            if (preciseTimer) {
+                clearInterval(preciseTimer);
+                preciseTimer = null;
             }
         }
     });

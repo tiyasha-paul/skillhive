@@ -1,6 +1,6 @@
 // Content script to sync data with SkillHive Dashboard
 
-console.log('SkillHive Extension: Content Script Loaded');
+console.log('SkillHive Extension: Content Script Loaded [VERSION 2.0 - DARK MODE]');
 
 // Function to send data
 function syncData() {
@@ -86,16 +86,20 @@ function showInPageAlert(text) {
     const closeBtn = document.createElement('button');
     closeBtn.innerText = 'Dismiss';
     closeBtn.style.cssText = `
-        align-self: flex-end;
+        align-self: center;
+        margin-top: 8px;
         background: #334155;
         border: 1px solid #475569;
-        padding: 8px 16px;
+        padding: 8px 24px;
         border-radius: 8px;
         cursor: pointer;
         font-size: 13px;
         font-weight: 500;
         color: #ffffff;
         transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     `;
     closeBtn.onmouseover = () => {
         closeBtn.style.background = '#475569';
@@ -139,5 +143,12 @@ window.addEventListener('message', (event) => {
     if (event.data.type === 'REQUEST_EXTENSION_DATA') {
         // console.log('SkillHive Extension: Received Request from Page'); 
         syncData();
+    }
+
+    if (event.data.type === 'CLEAR_EXTENSION_DATA') {
+        chrome.storage.local.set({ activityLog: [] }, () => {
+            console.log('History Cleared');
+            syncData();
+        });
     }
 });

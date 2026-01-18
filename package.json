@@ -10,7 +10,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "zip-extension": "powershell -Command \"if (Test-Path public/extension.zip) { Remove-Item public/extension.zip }; Compress-Archive -Path extension/* -DestinationPath public/extension.zip\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

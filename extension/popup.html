@@ -5,88 +5,96 @@
     <title>SkillHive Tracker</title>
     <style>
         body {
-            width: 320px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            width: 340px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             padding: 16px;
-            background-color: #f8fafc;
-            color: #0f172a;
+            background-color: #020617;
+            /* Slate 950 */
+            color: #e2e8f0;
         }
 
         .header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 16px;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #1e293b;
         }
 
         .logo {
-            width: 24px;
-            height: 24px;
-            background-color: #2563eb;
-            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
         }
 
         h1 {
             font-size: 16px;
             font-weight: 600;
             margin: 0;
+            color: #f8fafc;
+            letter-spacing: -0.025em;
         }
 
         .card {
-            background: white;
-            border-radius: 8px;
-            padding: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            margin-bottom: 12px;
+            background: #0f172a;
+            /* Slate 900 */
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 16px;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
+            gap: 12px;
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .stat-item h2 {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
             margin: 0 0 4px 0;
+            letter-spacing: -0.025em;
         }
 
         .stat-item p {
-            font-size: 10px;
-            color: #64748b;
+            font-size: 11px;
+            color: #94a3b8;
             margin: 0;
             text-transform: uppercase;
             font-weight: 600;
+            letter-spacing: 0.05em;
         }
 
         .text-green {
-            color: #16a34a;
+            color: #4ade80;
         }
 
         .text-yellow {
-            color: #ca8a04;
+            color: #fbbf24;
         }
 
         .text-red {
-            color: #dc2626;
+            color: #f87171;
         }
 
         .chart-container {
-            margin-top: 8px;
+            margin-top: 12px;
         }
 
         .bar-chart {
             display: flex;
-            height: 24px;
+            height: 8px;
             width: 100%;
-            background-color: #e2e8f0;
-            border-radius: 6px;
+            background-color: #1e293b;
+            border-radius: 4px;
             overflow: hidden;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
 
         .bar-segment {
@@ -108,15 +116,15 @@
         .chart-legend {
             display: flex;
             justify-content: center;
-            gap: 12px;
-            font-size: 10px;
-            color: #64748b;
+            gap: 16px;
+            font-size: 11px;
+            color: #94a3b8;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
 
         .dot {
@@ -128,33 +136,28 @@
         .btn {
             display: block;
             width: 100%;
-            padding: 8px;
-            background-color: #0f172a;
+            padding: 10px;
+            background-color: #2563eb;
             color: white;
             border: none;
-            border-radius: 6px;
-            font-size: 12px;
+            border-radius: 8px;
+            font-size: 13px;
             font-weight: 500;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
+            transition: background-color 0.2s;
         }
 
         .btn:hover {
-            background-color: #1e293b;
-        }
-
-        .divider {
-            height: 1px;
-            background-color: #e2e8f0;
-            margin: 12px 0;
+            background-color: #1d4ed8;
         }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <div class="logo"></div>
+        <img src="logo.png" class="logo" alt="Logo">
         <h1>SkillHive Focus</h1>
     </div>
 

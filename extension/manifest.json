@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "SkillHive Productivity Tracker",
+    "name": "SkillHive V2 (Dark Mode)",
     "version": "1.0",
     "description": "Track your study habits and get AI insights.",
     "permissions": [

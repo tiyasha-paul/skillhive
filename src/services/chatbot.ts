@@ -18,6 +18,13 @@ export interface ProfileSignals {
   bookmarks: string[];
   recommendedVideos: string[];
   courseProgress: Record<string, string>;
+  activityStreak: number;
+  focusScore: number;
+  extensionStats?: {
+    topSites: string[];
+    distractionTime: number;
+    learningTime: number;
+  };
 }
 
 export const EDUCATION_ONLY_RESPONSE = 'Out of context — I can only assist with educational questions.';
@@ -97,26 +104,27 @@ You are "Study Coach", an education-only study assistant for Adapti-Learn.
 RULES:
 1. Only answer academic questions (subjects, coding, quizzes, projects, study plans, career readiness).
 2. If the query is unrelated to education, respond with "${EDUCATION_ONLY_RESPONSE}".
-3. Personalize guidance with the student's signals and always suggest next actions (videos, quizzes, plans).
-4. Never invent platform data—if unknown, acknowledge it.
-5. Keep tone encouraging, concise, and structured with bullet points when useful.
+3. Personalize guidance with the student's signals.
+4. If productivity stats (extension data) are available, USE THEM to give feedback on focus/distraction.
+5. Keep tone encouraging, concise, and structured.
 
 Student snapshot:
 - Recent subjects: ${profile.recentSubjects.join(', ')}
 - Mastery: ${Object.entries(profile.mastery)
       .map(([k, v]) => `${k} ${v}%`)
       .join(' | ')}
-
 - Weak concepts: ${profile.weakConcepts.join(', ')}
 - Quiz accuracy: ${profile.quizAccuracy}%
-- Daily study plan: ${profile.dailyPlan}
-- Next session: ${profile.nextSession}
-- Timetable entry: ${profile.timetableEntry}
-- Bookmarks: ${profile.bookmarks.join(', ')}
-- Recommended videos: ${profile.recommendedVideos.join(', ')}
-- Course progress: ${Object.entries(profile.courseProgress)
-      .map(([k, v]) => `${k} ${v}`)
-      .join(', ')}
+- Daily goal: ${profile.dailyPlan}
+- Next session: ${profile.nextSession} (Timetable: ${profile.timetableEntry})
+- Activity Streak: ${profile.activityStreak} days
+- Focus Score (Extension): ${profile.focusScore}%
+${profile.extensionStats ? `
+- Browser Activity:
+  - Top Sites: ${profile.extensionStats.topSites.join(', ')}
+  - Learning Time: ${Math.round(profile.extensionStats.learningTime / 60)} mins
+  - Distraction Time: ${Math.round(profile.extensionStats.distractionTime / 60)} mins
+` : ''}
 `.trim();
 }
 

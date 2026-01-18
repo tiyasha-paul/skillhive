@@ -5,6 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, MessageCircle, X, ArrowDown, FileQuestion, Send } from 'lucide-react';
 import Markdown from 'markdown-to-jsx';
+import {
+  getPerformanceMetrics,
+  getSubjectPerformance,
+  getRecentWeakAreas,
+  getRecentStrongAreas
+} from '@/services/quizResults';
+import { getTodayGoals } from '@/services/goals';
+import { getUpcomingSessions, type TimetableSession } from '@/services/timetable';
+import { getActivityStreak } from '@/services/activityTracker';
+import { getExtensionStats } from '@/services/extension';
 import { ChatMessage, EDUCATION_ONLY_RESPONSE, isEducationalPrompt, ProfileSignals, sendChatToAssistant } from '@/services/chatbot';
 import { cn } from '@/lib/utils';
 import { QuizGenerator } from './QuizGenerator';
@@ -17,12 +27,14 @@ const defaultProfileSignals: ProfileSignals = {
   mastery: {},
   weakConcepts: [],
   quizAccuracy: 0,
-  dailyPlan: '',
-  nextSession: '',
-  timetableEntry: '',
+  dailyPlan: 'No specific plan set.',
+  nextSession: 'None',
+  timetableEntry: 'None',
   bookmarks: [],
   recommendedVideos: [],
   courseProgress: {},
+  activityStreak: 0,
+  focusScore: 0,
 };
 
 const introMessage: ChatMessage = {
@@ -69,12 +81,56 @@ export function ChatbotWidget() {
   const [isTyping, setIsTyping] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [upcomingSessions, setUpcomingSessions] = useState<TimetableSession[]>([]);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Fetch Async Data (Timetable)
+  useEffect(() => {
+    if (user && isOpen) {
+      getUpcomingSessions(user.id).then(setUpcomingSessions);
+    }
+  }, [user, isOpen]);
 
   const profileSignals = useMemo(() => {
     if (!user) return defaultProfileSignals;
-    return { ...defaultProfileSignals };
-  }, [user]);
+
+    const metrics = getPerformanceMetrics();
+    const subjects = getSubjectPerformance();
+    const weakAreas = getRecentWeakAreas(3);
+    const goals = getTodayGoals();
+    const streak = getActivityStreak();
+    const extensionStats = getExtensionStats();
+
+    // Format Goals
+    const goalText = goals.length > 0
+      ? goals.map(g => `- ${g.text} (${g.completed ? 'Done' : 'Pending'})`).join('\n')
+      : 'No specific goals set for today.';
+
+    // Format Next Session
+    const nextSession = upcomingSessions.length > 0
+      ? `${upcomingSessions[0].subject} at ${upcomingSessions[0].start_time}`
+      : 'No upcoming sessions.';
+
+    return {
+      recentSubjects: subjects.map(s => s.subject),
+      mastery: subjects.reduce((acc, curr) => ({ ...acc, [curr.subject]: Math.round(curr.accuracy) }), {}),
+      weakConcepts: weakAreas.map(w => w.topic),
+      quizAccuracy: Math.round(metrics.averageAccuracy),
+      dailyPlan: goalText,
+      nextSession: nextSession,
+      timetableEntry: nextSession,
+      bookmarks: [], // Placeholder until bookmark service logic is confirmed
+      recommendedVideos: [],
+      courseProgress: {},
+      activityStreak: streak,
+      focusScore: extensionStats?.focusScore || 0,
+      extensionStats: extensionStats ? {
+        topSites: extensionStats.topSitesToday.map(s => s.domain),
+        learningTime: extensionStats.learningTime,
+        distractionTime: extensionStats.distractionTime
+      } : undefined
+    };
+  }, [user, upcomingSessions, isOpen]);
 
   useEffect(() => {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { StudentNavbar } from '@/components/StudentNavbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { BookOpen, Plus, Edit2, Trash2, FileText, Clock, PlayCircle, Loader2 } f
 import { toast } from 'sonner';
 import { getStudyNotes, saveStudyNote, deleteStudyNote, getStudyNoteById } from '@/services/studyNotes';
 import { type StudyNote, type NoteSection, type NoteCategory } from '@/data/studyNotes';
+import YouTube, { type YouTubeProps } from 'react-youtube';
 
 export default function StudentStudyNotes() {
   const [notes, setNotes] = useState<StudyNote[]>([]);
@@ -20,6 +21,9 @@ export default function StudentStudyNotes() {
   const [editingNote, setEditingNote] = useState<StudyNote | null>(null);
   const [viewingNote, setViewingNote] = useState<StudyNote | null>(null);
   const [activeTab, setActiveTab] = useState<string>('all');
+
+  // Video player ref for viewing notes
+  const viewerPlayerRef = useRef<any>(null);
 
   // Form state
   const [noteForm, setNoteForm] = useState({
@@ -134,6 +138,42 @@ export default function StudentStudyNotes() {
     if (!sections) return 1;
     const wordCount = sections.reduce((acc, s) => acc + (s.content?.split(/\s+/).length || 0), 0);
     return Math.ceil(wordCount / 200) || 1;
+  };
+
+  const onViewerReady: YouTubeProps['onReady'] = (event) => {
+    viewerPlayerRef.current = event.target;
+  };
+
+  const seekToTimestamp = (seconds: number) => {
+    if (viewerPlayerRef.current) {
+      viewerPlayerRef.current.seekTo(seconds, true);
+      viewerPlayerRef.current.playVideo();
+    }
+  };
+
+  // Helper to render text with clickable timestamps
+  const renderContentWithTimestamps = (text: string) => {
+    const parts = text.split(/(\[\[\d{2}:\d{2}\]\])/g);
+    return parts.map((part, index) => {
+      if (part.match(/^\[\[\d{2}:\d{2}\]\]$/)) {
+        const timeString = part.slice(2, -2);
+        const [min, sec] = timeString.split(':').map(Number);
+        const totalSeconds = min * 60 + sec;
+
+        return (
+          <span
+            key={index}
+            onClick={() => seekToTimestamp(totalSeconds)}
+            className="inline-flex items-center gap-0.5 text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded cursor-pointer mx-1 font-mono text-sm transition-colors"
+            title={`Jump to ${timeString}`}
+          >
+            <PlayCircle className="w-3 h-3" />
+            {timeString}
+          </span>
+        );
+      }
+      return part;
+    });
   };
 
   const filteredNotes = getFilteredNotes();
@@ -358,7 +398,7 @@ export default function StudentStudyNotes() {
         </Dialog>
 
         {/* View Note Dialog */}
-        <Dialog open={!!viewingNote} onOpenChange={() => setViewingNote(null)}>
+        <Dialog open={!!viewingNote} onOpenChange={() => { setViewingNote(null); viewerPlayerRef.current = null; }}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             {viewingNote && (
               <>
@@ -380,11 +420,15 @@ export default function StudentStudyNotes() {
                   <div className="space-y-6">
                     {viewingNote.videoUrl && (
                       <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                        <iframe
-                          src={viewingNote.videoUrl.replace('watch?v=', 'embed/')}
-                          title={viewingNote.title}
+                        <YouTube
+                          videoId={viewingNote.videoId || viewingNote.videoUrl.split('v=')[1]}
                           className="w-full h-full"
-                          allowFullScreen
+                          iframeClassName="w-full h-full"
+                          opts={{
+                            width: '100%',
+                            height: '100%',
+                          }}
+                          onReady={onViewerReady}
                         />
                       </div>
                     )}
@@ -392,14 +436,18 @@ export default function StudentStudyNotes() {
                     {viewingNote.summary && (
                       <div className="bg-muted/30 p-4 rounded-lg">
                         <h3 className="font-semibold mb-2">Summary</h3>
-                        <p className="text-sm text-muted-foreground">{viewingNote.summary}</p>
+                        <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {renderContentWithTimestamps(viewingNote.summary)}
+                        </div>
                       </div>
                     )}
 
                     {viewingNote.content && viewingNote.content.map((section, idx) => (
                       <div key={idx}>
                         <h3 className="font-semibold mb-2">{section.heading}</h3>
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{section.content}</p>
+                        <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                          {renderContentWithTimestamps(section.content)}
+                        </div>
                       </div>
                     ))}
                   </div>

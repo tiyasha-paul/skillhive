@@ -130,10 +130,7 @@ const Index = () => {
 
           <div className="container mx-auto px-4 relative z-10">
             <div className="text-center max-w-4xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 backdrop-blur-md border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-semibold mb-6 animate-fade-in transition-colors">
-                <GraduationCap size={14} />
-                <span>The Complete Student Ecosystem</span>
-              </div>
+
 
               <h2 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-8 animate-fade-in leading-[1.1]">
                 Master Your Studies <br />

@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { searchYouTubeVideos, getEmbedUrl, extractVideoId, getVideoById, type YouTubeVideo } from '@/services/youtube';
+import { searchYouTubeVideos, extractVideoId, getVideoById, type YouTubeVideo } from '@/services/youtube';
 import { saveStudyNote } from '@/services/studyNotes';
-import { Loader2, Search, ArrowLeft, Save, PlayCircle } from 'lucide-react';
+import { Loader2, Search, ArrowLeft, Save, PlayCircle, Clock, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
+import YouTube, { type YouTubeProps } from 'react-youtube';
 
 interface VideoNoteTakerProps {
     open: boolean;
@@ -27,6 +28,9 @@ export function VideoNoteTaker({ open, onOpenChange }: VideoNoteTakerProps) {
     const [noteContent, setNoteContent] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
+    // Video Player Reference
+    const playerRef = useRef<any>(null);
+
     const handleSearch = async () => {
         if (!searchQuery.trim()) return;
 
@@ -35,7 +39,24 @@ export function VideoNoteTaker({ open, onOpenChange }: VideoNoteTakerProps) {
             // Check if input is a YouTube URL
             const videoId = extractVideoId(searchQuery);
             if (videoId) {
-                const video = await getVideoById(videoId);
+                let video = await getVideoById(videoId);
+
+                // Fallback if API fails but we have a valid ID
+                if (!video) {
+                    video = {
+                        id: { videoId },
+                        snippet: {
+                            title: 'YouTube Video',
+                            description: 'Video details could not be loaded.',
+                            channelTitle: 'Unknown Channel',
+                            thumbnails: {
+                                medium: { url: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` },
+                                high: { url: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` },
+                            }
+                        }
+                    };
+                }
+
                 if (video) {
                     handleVideoSelect(video);
                     setIsSearching(false);
@@ -62,6 +83,22 @@ export function VideoNoteTaker({ open, onOpenChange }: VideoNoteTakerProps) {
 
     const handleBackToSearch = () => {
         setSelectedVideo(null);
+        playerRef.current = null;
+    };
+
+    const onPlayerReady: YouTubeProps['onReady'] = (event) => {
+        playerRef.current = event.target;
+    };
+
+    const insertTimestamp = () => {
+        if (!playerRef.current) return;
+
+        const currentTime = playerRef.current.getCurrentTime();
+        const minutes = Math.floor(currentTime / 60);
+        const seconds = Math.floor(currentTime % 60);
+        const formattedTime = `[[${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}]]`;
+
+        setNoteContent(prev => prev + (prev.endsWith(' ') || prev.length === 0 ? '' : ' ') + formattedTime + ' ');
     };
 
     const handleSaveNote = async () => {
@@ -103,9 +140,6 @@ export function VideoNoteTaker({ open, onOpenChange }: VideoNoteTakerProps) {
             toast.success('Note saved successfully!');
             setNoteTitle('');
             setNoteContent('');
-            // Optionally close or stay? Let's stay so they can take more notes or finish.
-            // But maybe we should clear to indicate saved? Or just toast.
-            // If we close, user can't continue watching. Better to stay.
 
         } catch (error) {
             console.error('Failed to save note:', error);
@@ -117,7 +151,7 @@ export function VideoNoteTaker({ open, onOpenChange }: VideoNoteTakerProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[95vw] w-full h-[95vh] flex flex-col p-0 gap-0">
+            <DialogContent className="max-w-none w-screen h-screen rounded-none flex flex-col p-0 gap-0 border-0">
                 <DialogHeader className="px-6 py-4 border-b">
                     <DialogTitle className="flex items-center gap-2">
                         <PlayCircle className="w-5 h-5 text-primary" />
@@ -139,6 +173,19 @@ export function VideoNoteTaker({ open, onOpenChange }: VideoNoteTakerProps) {
                                 <Button onClick={handleSearch} disabled={isSearching}>
                                     {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                                 </Button>
+                                {searchQuery && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => {
+                                            setSearchQuery('');
+                                            setSearchResults([]);
+                                        }}
+                                        title="Clear search"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </Button>
+                                )}
                             </div>
 
                             <ScrollArea className="flex-1">
@@ -187,13 +234,19 @@ export function VideoNoteTaker({ open, onOpenChange }: VideoNoteTakerProps) {
                                             <ArrowLeft className="w-4 h-4" /> Back into Search
                                         </Button>
                                     </div>
-                                    <div className="flex-1 relative bg-black">
-                                        <iframe
-                                            src={getEmbedUrl(selectedVideo.id.videoId)}
-                                            title={selectedVideo.snippet.title}
-                                            className="absolute inset-0 w-full h-full"
-                                            allowFullScreen
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    <div className="flex-1 relative bg-black flex items-center justify-center">
+                                        <YouTube
+                                            videoId={selectedVideo.id.videoId}
+                                            className="w-full h-full"
+                                            iframeClassName="w-full h-full"
+                                            opts={{
+                                                height: '100%',
+                                                width: '100%',
+                                                playerVars: {
+                                                    autoplay: 0,
+                                                },
+                                            }}
+                                            onReady={onPlayerReady}
                                         />
                                     </div>
                                 </div>
@@ -204,8 +257,20 @@ export function VideoNoteTaker({ open, onOpenChange }: VideoNoteTakerProps) {
                             <ResizablePanel defaultSize={35} minSize={20}>
                                 {/* Notes */}
                                 <div className="h-full flex flex-col bg-background">
-                                    <div className="p-4 border-b">
-                                        <h3 className="font-semibold mb-2">Take Notes</h3>
+                                    <div className="p-4 border-b space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="font-semibold">Take Notes</h3>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={insertTimestamp}
+                                                className="h-8 gap-1.5 text-xs"
+                                                title="Insert current timestamp"
+                                            >
+                                                <Clock className="w-3.5 h-3.5 text-primary" />
+                                                Timestamp
+                                            </Button>
+                                        </div>
                                         <Input
                                             placeholder="Note Title"
                                             value={noteTitle}
@@ -215,10 +280,10 @@ export function VideoNoteTaker({ open, onOpenChange }: VideoNoteTakerProps) {
                                     </div>
                                     <div className="flex-1 p-4 overflow-hidden">
                                         <Textarea
-                                            placeholder="Type your notes here as you watch..."
+                                            placeholder="Type your notes here... Click 'Timestamp' to mark important moments."
                                             value={noteContent}
                                             onChange={(e) => setNoteContent(e.target.value)}
-                                            className="h-full resize-none border-0 focus-visible:ring-0 text-base"
+                                            className="h-full resize-none border-0 focus-visible:ring-0 text-base font-mono"
                                         />
                                     </div>
                                     <div className="p-4 border-t bg-muted/10">

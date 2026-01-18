@@ -776,38 +776,27 @@ Can you give me specific advice on how to improve my weak areas?`;
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pt-2 pl-4 pr-1">
-                      {/* Inner Accordion: Topics */}
-                      <Accordion type="single" collapsible className="w-full">
+                      {/* Inner List: Topics (No Dropdown) */}
+                      <div className="space-y-2">
                         {areas.map((area, index) => (
-                          <AccordionItem key={`${subject}-${index}`} value={`${area.subject}::${area.topic}`} className="border rounded-lg px-2 mb-2 last:mb-0">
-                            <AccordionTrigger className="hover:no-underline py-2">
-                              <div className="flex items-center justify-between w-full pr-4">
-                                <div className="flex items-center gap-3 text-left">
-                                  <span className="font-medium text-sm">{area.topic}</span>
-                                  <div className="flex gap-2 text-xs text-muted-foreground">
-                                    <span className="flex items-center gap-1">
-                                      <Clock className="h-3 w-3" /> {Math.round(area.averageTime)}s
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <Target className="h-3 w-3" /> {area.totalAttempts} tries
-                                    </span>
-                                  </div>
-                                </div>
-                                <Badge variant="default" className="bg-green-600 ml-2 text-xs">
-                                  {area.accuracy.toFixed(0)}%
-                                </Badge>
+                          <div key={`${subject}-${index}`} className="border rounded-lg p-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center gap-3 text-left">
+                              <span className="font-medium text-sm">{area.topic}</span>
+                              <div className="flex gap-2 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" /> {Math.round(area.averageTime)}s
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Target className="h-3 w-3" /> {area.totalAttempts} tries
+                                </span>
                               </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="space-y-2 pt-2 pb-2">
-                                <p className="text-[10px] text-muted-foreground text-center pt-2">
-                                  You have mastered this topic! Keep it up.
-                                </p>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
+                            </div>
+                            <Badge variant="default" className="bg-green-600 ml-2 text-xs">
+                              {area.accuracy.toFixed(0)}%
+                            </Badge>
+                          </div>
                         ))}
-                      </Accordion>
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
                 ))}

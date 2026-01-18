@@ -441,6 +441,61 @@ Can you help me improve my focus based on this?`;
                     </CardContent>
                 </Card>
 
+                <Card className="mb-8">
+                    <CardHeader>
+                        <CardTitle>Site Categorization Guide</CardTitle>
+                        <CardDescription>How we classify different websites</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <h3 className="font-semibold text-green-600 dark:text-green-400 mb-2 flex items-center gap-2">
+                                    <Brain className="h-4 w-4" /> Learning
+                                </h3>
+                                <p className="text-sm text-muted-foreground mb-2">Sites dedicated to education and productivity.</p>
+                                <ul className="text-sm list-disc list-inside text-muted-foreground">
+                                    <li>Stack Overflow</li>
+                                    <li>GitHub</li>
+                                    <li>Udemy, Coursera, edX</li>
+                                    <li>Khan Academy, W3Schools</li>
+                                    <li>ChatGPT, Claude, Gemini</li>
+                                    <li>LinkedIn</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="font-semibold text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
+                                    <AlertCircle className="h-4 w-4" /> Distraction
+                                </h3>
+                                <p className="text-sm text-muted-foreground mb-2">Sites that typically reduce focus.</p>
+                                <ul className="text-sm list-disc list-inside text-muted-foreground">
+                                    <li>Facebook, Instagram, X (Twitter)</li>
+                                    <li>TikTok, Reddit</li>
+                                    <li>Netflix, Twitch</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="font-semibold text-yellow-600 dark:text-yellow-400 mb-2 flex items-center gap-2">
+                                    <Clock className="h-4 w-4" /> Mixed
+                                </h3>
+                                <p className="text-sm text-muted-foreground mb-2">Sites that can be used for both.</p>
+                                <ul className="text-sm list-disc list-inside text-muted-foreground">
+                                    <li>YouTube</li>
+                                    <li>Spotify</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="pt-4 border-t">
+                            <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                <span className="bg-secondary px-2 py-1 rounded text-xs font-semibold">NOTE</span>
+                                All other websites not listed above are considered <strong>Neutral</strong> and do not affect your focus score.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {!isConnected && (
                     <Card className="mb-8">
                         <CardHeader>

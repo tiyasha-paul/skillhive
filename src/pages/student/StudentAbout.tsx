@@ -6,33 +6,25 @@ export default function StudentAbout() {
   return (
     <div className="min-h-screen bg-background">
       <StudentNavbar />
-      
+
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         {/* About This Project Section */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="text-3xl font-bold flex items-center gap-2">
-              🌟 About Section
+              About SkillHive
             </CardTitle>
-            <CardDescription className="text-lg">Polished & Professional</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <h2 className="text-2xl font-semibold mb-4">About This Project</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                Our platform is a next-generation AI-powered Adaptive Learning Ecosystem designed to personalize education for every learner.
+                SkillHive is an AI-powered Adaptive Learning Ecosystem that evolves with you. Unlike traditional platforms, it treats every student as unique, analyzing strengths, weaknesses, and learning patterns in real-time to create a truly personalized education path.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                Traditional learning platforms treat all students the same — but real learning doesn't work that way. Each student has unique strengths, weaknesses, learning speeds, and engagement patterns.
-              </p>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                This system uses machine learning, real-time analytics, and intelligent recommendations to create a fully personalized learning path for every student.
-              </p>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                From difficulty adjustment and skill mastery tracking to mentor dashboards and fatigue detection, our platform transforms education into a dynamic, measurable, and deeply engaging journey.
+                Beyond just quizzes, we integrate a complete suite of productivity and career tools. From distraction-free studying with our browser extension to intelligent resume analysis and job search assistance, SkillHive bridges the gap between academic mastery and professional readiness.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                Whether you're a student who wants smarter learning or a mentor seeking deeper insights, this platform provides clarity, precision, and adaptive intelligence at every step.
+                Whether you're mastering complex engineering topics via smart video recommendations or organizing your day with our synced timetable, SkillHive provides the clarity, precision, and intelligence needed to excel in today's competitive landscape.
               </p>
             </div>
           </CardContent>
@@ -42,42 +34,42 @@ export default function StudentAbout() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="text-2xl font-semibold flex items-center gap-2">
-              🎯 Key Capabilities
+              Key Capabilities
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="grid md:grid-cols-2 gap-4 list-none space-y-2">
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
-                <span className="text-muted-foreground">Hyper-personalized learning paths</span>
+                <span className="text-muted-foreground">Personalized analytics that identify and strengthen weak areas</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
-                <span className="text-muted-foreground">Real-time adaptive difficulty (Elo-based)</span>
+                <span className="text-muted-foreground">Curated video recommendations for efficient concept mastery</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
-                <span className="text-muted-foreground">Intelligent recommendations (videos, quizzes, notes, PYQs)</span>
+                <span className="text-muted-foreground">Automated study notes to streamline revision</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
-                <span className="text-muted-foreground">Mentor dashboards with heatmaps & at-risk alerts</span>
+                <span className="text-muted-foreground">Focused learning environment with distraction blocking</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
-                <span className="text-muted-foreground">Automated study plans & readiness prediction</span>
+                <span className="text-muted-foreground">Seamless organization with synchronized daily goals</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
-                <span className="text-muted-foreground">Gamification (streaks, badges, XP)</span>
+                <span className="text-muted-foreground">Career-readiness tools including resume analysis</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
-                <span className="text-muted-foreground">Offline access & notifications</span>
+                <span className="text-muted-foreground">Comprehensive student tracking for mentors</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-1">•</span>
-                <span className="text-muted-foreground">AI-powered chatbot for academic assistance</span>
+                <span className="text-muted-foreground">24/7 Academic support via context-aware AI</span>
               </li>
             </ul>
           </CardContent>
@@ -87,22 +79,22 @@ export default function StudentAbout() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-semibold flex items-center gap-2">
-              👨‍💻 Developed By
+              Developed By
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-6">
               {/* Developer 1: Anurag Dey */}
-              <Card className="bg-accent/5">
+              <Card className="bg-white/80 dark:bg-card border shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg">1. Anurag Dey</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Github className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href="https://github.com/anuragcode-16" 
-                      target="_blank" 
+                    <a
+                      href="https://github.com/anuragcode-16"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline text-sm"
                     >
@@ -111,9 +103,9 @@ export default function StudentAbout() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Linkedin className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href="https://github.com/anuragcode-16" 
-                      target="_blank" 
+                    <a
+                      href="https://www.linkedin.com/in/anurag-dey-67533a304/"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline text-sm"
                     >
@@ -124,16 +116,16 @@ export default function StudentAbout() {
               </Card>
 
               {/* Developer 2: Tiyasha Paul */}
-              <Card className="bg-accent/5">
+              <Card className="bg-white/80 dark:bg-card border shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg">2. Tiyasha Paul</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Github className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href="https://github.com/tiyasha-paul" 
-                      target="_blank" 
+                    <a
+                      href="https://github.com/tiyasha-paul"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline text-sm"
                     >
@@ -142,9 +134,9 @@ export default function StudentAbout() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Linkedin className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href="https://github.com/tiyasha-paul" 
-                      target="_blank" 
+                    <a
+                      href="https://www.linkedin.com/in/tiyasha-p-7319b6253/"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline text-sm"
                     >
@@ -155,16 +147,16 @@ export default function StudentAbout() {
               </Card>
 
               {/* Developer 3: Ojsweenee Saha */}
-              <Card className="bg-accent/5">
+              <Card className="bg-white/80 dark:bg-card border shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg">3. Ojsweenee Saha</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Github className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href="https://github.com/ojsweenee" 
-                      target="_blank" 
+                    <a
+                      href="https://github.com/ojsweenee"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline text-sm"
                     >
@@ -173,9 +165,9 @@ export default function StudentAbout() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Linkedin className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href="https://github.com/ojsweenee" 
-                      target="_blank" 
+                    <a
+                      href="https://github.com/ojsweenee"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline text-sm"
                     >

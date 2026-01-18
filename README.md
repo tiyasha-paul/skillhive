@@ -1,6 +1,6 @@
 # SkillHive: AI-Powered Adaptive Learning & Career Assistant
 
-SkillHive is an intelligent learning platform that adapts to each student's pace, identifies learning gaps, and provides personalized recommendations using AI. It combines dynamic quiz generation, adaptive practice, explainable resume analysis, and a focused learning environment.
+SkillHive is a next-generation **AI-Powered Adaptive Learning Ecosystem** that evolves with every student. It goes beyond traditional learning management by using real-time analytics to personalize education, identify weak areas, and bridge the gap between academic mastery and career readiness.
 
 ![SkillHive Landing Page](public/landing-page-preview.png)
 
@@ -13,17 +13,17 @@ SkillHive is an intelligent learning platform that adapts to each student's pace
 - **Personalized Recommendations**: YouTube video suggestions based on performance and learning gaps.
 
 ### Career Assistance
-- **Smart Resume Analysis**: Upload a resume (PDF) or fill out a profile to get instant AI feedback on strengths, improvements, and match scores.
-- **Real-Time Job Matching**: Integration with JSearch API to fetch live job listings from LinkedIn, Indeed, and more.
-- **AI Gap Analysis**: Detailed reasoning for why a job is a good fit and what skills might be missing.
+- **Smart Resume Analysis**: Upload a resume (PDF) to get instant AI feedback on strengths, improvements, and match scores against job descriptions.
+- **Intelligent Job Search**: Real-time job listings via JSearch API, filtered by your skills and preferences.
+- **Skill Gap Analysis**: Detailed reasoning for why a job is a good fit and recommendations for missing skills.
 
 ### Learning Tools
 - **AI Study Coach**: A built-in chatbot that provides instant study help, answers questions, and explains complex topics using Gemini.
-- **SkillHive Browser Extension**: A Chrome extension that integrates with your browser to block distractions and keep you focused on your study goals.
+- **Browser Extension**: A companion Chrome extension that categorizes websites (Productive/Distraction), blocks distractions during study sessions, and syncs user context with the platform.
 - **Podcast Mode**: Convert educational YouTube videos into audio-only podcasts for on-the-go learning.
-- **Personal Knowledge Base**: Create and organize study notes, including AI-generated summaries from videos and custom flashcards.
-- **Interactive Timetable**: Manage classes and study sessions.
-- **Progress Tracking**: Track daily activity streaks and visualize learning habits.
+- **Personal Knowledge Base**: Create and organize study notes.
+- **Interactive Timetable**: Manage classes and study sessions with **Daily Goals Synchronization**.
+- **Progress Tracking**: Visual analytics including "Weak Areas" detection, strength mapping, and activity heatmaps.
 
 ### Architecture
 - **Frontend**: React, Vite, TypeScript, Tailwind CSS, Shadcn UI.

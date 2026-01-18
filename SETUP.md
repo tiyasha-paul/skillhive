@@ -68,6 +68,13 @@ VITE_JSEARCH_API_KEY=your_rapidapi_key
 4. Go to **Authentication > Settings** and ensure "Email" provider is enabled.
 5. Add `http://localhost:8080` (or your local port) to the **Redirect URLs**.
 
+### 5. Install Browser Extension
+1. Open Chrome and go to `chrome://extensions/`.
+2. Enable **Developer mode** (toggle in top right).
+3. Click **Load unpacked**.
+4. Select the `extension` folder located in the root of this project.
+5. The **SkillHive Focus** extension should now be active.
+
 ---
 
 ## Running the Application

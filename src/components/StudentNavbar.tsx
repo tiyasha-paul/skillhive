@@ -1,4 +1,4 @@
-import { Bell, User, GraduationCap, ChevronDown, Menu, X } from 'lucide-react';
+import { Bell, User, ChevronDown, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -107,9 +107,7 @@ export function StudentNavbar() {
                 <SheetContent side="left" className="w-[280px] sm:w-[350px] p-0">
                   <ScrollArea className="h-full py-6">
                     <div className="flex items-center gap-2 px-6 mb-6">
-                      <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg">
-                        <GraduationCap className="text-white" size={20} />
-                      </div>
+                      <img src="/logo.png" alt="SkillHive" className="w-10 h-10 object-contain" />
                       <span className="text-xl font-bold tracking-tight">SkillHive</span>
                     </div>
                     <div className="flex flex-col gap-1 px-4">
@@ -121,8 +119,8 @@ export function StudentNavbar() {
                             setMobileMenuOpen(false);
                           }}
                           className={`flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors ${isActive(item.path)
-                              ? 'bg-primary/10 text-primary'
-                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                             }`}
                         >
                           {item.label}
@@ -137,8 +135,8 @@ export function StudentNavbar() {
                             setMobileMenuOpen(false);
                           }}
                           className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-md transition-colors ${isActive('/student/jobs')
-                              ? 'bg-primary/10 text-primary'
-                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                             }`}
                         >
                           Jobs & Internships
@@ -155,9 +153,7 @@ export function StudentNavbar() {
               className="flex items-center gap-2 cursor-pointer"
               onClick={() => navigate('/student/dashboard')}
             >
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg">
-                <GraduationCap className="text-white" size={20} />
-              </div>
+              <img src="/logo.png" alt="SkillHive" className="w-10 h-10 object-contain" />
               <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white hidden md:block">SkillHive</span>
             </div>
           </div>

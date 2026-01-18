@@ -39,9 +39,7 @@ const Index = () => {
       <header className="sticky top-0 z-50 w-full border-b border-slate-200/50 dark:border-white/10 bg-white/70 dark:bg-slate-800/80 text-slate-900 dark:text-white backdrop-blur-xl shadow-sm transition-all duration-300">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg">
-              <GraduationCap className="text-white" size={20} />
-            </div>
+            <img src="/logo.png" alt="SkillHive" className="w-10 h-10 object-contain" />
             <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">SkillHive</span>
           </div>
 

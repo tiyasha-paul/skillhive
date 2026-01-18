@@ -2,6 +2,8 @@
 
 SkillHive is a next-generation **AI-Powered Adaptive Learning Ecosystem** that evolves with every student. It goes beyond traditional learning management by using real-time analytics to personalize education, identify weak areas, and bridge the gap between academic mastery and career readiness.
 
+### **Live Demo:** [https://skillhive-gamma.vercel.app/](https://skillhive-gamma.vercel.app/)
+
 ![SkillHive Landing Page](public/landing-page-preview.png)
 
 ## Key Features

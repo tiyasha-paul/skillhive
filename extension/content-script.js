@@ -46,30 +46,32 @@ function showInPageAlert(text) {
     overlay.id = 'skillhive-alert-overlay';
     overlay.style.cssText = `
         position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background-color: #ffffff;
-        border: 2px solid #ef4444;
+        bottom: 24px;
+        right: 24px;
+        background-color: #0f172a; /* Slate 900 */
+        border: 1px solid #1e293b; /* Slate 800 */
         border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        z-index: 2147483647; /* Max Z-Index */
-        font-family: 'Segoe UI', sans-serif;
-        color: #1f2937;
-        width: 320px;
-        animation: slideIn 0.5s ease-out;
+        padding: 20px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+        z-index: 2147483647;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: #e2e8f0;
+        width: 340px;
+        animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 12px;
+        backdrop-filter: blur(8px);
     `;
 
     const title = document.createElement('h3');
-    title.innerText = '🎯 Time to Refocus?';
+    title.innerText = 'Time to Refocus?';
     title.style.cssText = `
         margin: 0;
         font-size: 16px;
-        font-weight: 700;
-        color: #dc2626;
+        font-weight: 600;
+        letter-spacing: -0.025em;
+        color: #f8fafc;
     `;
 
     const body = document.createElement('p');
@@ -77,26 +79,32 @@ function showInPageAlert(text) {
     body.style.cssText = `
         margin: 0;
         font-size: 14px;
-        line-height: 1.4;
-        color: #4b5563;
+        line-height: 1.5;
+        color: #94a3b8;
     `;
 
     const closeBtn = document.createElement('button');
     closeBtn.innerText = 'Dismiss';
     closeBtn.style.cssText = `
         align-self: flex-end;
-        background: #f3f4f6;
-        border: none;
-        padding: 6px 12px;
-        border-radius: 6px;
+        background: #334155;
+        border: 1px solid #475569;
+        padding: 8px 16px;
+        border-radius: 8px;
         cursor: pointer;
-        font-size: 12px;
-        font-weight: 600;
-        color: #374151;
-        transition: background 0.2s;
+        font-size: 13px;
+        font-weight: 500;
+        color: #ffffff;
+        transition: all 0.2s;
     `;
-    closeBtn.onmouseover = () => closeBtn.style.background = '#e5e7eb';
-    closeBtn.onmouseout = () => closeBtn.style.background = '#f3f4f6';
+    closeBtn.onmouseover = () => {
+        closeBtn.style.background = '#475569';
+        closeBtn.style.borderColor = '#64748b';
+    };
+    closeBtn.onmouseout = () => {
+        closeBtn.style.background = '#334155';
+        closeBtn.style.borderColor = '#475569';
+    };
     closeBtn.onclick = () => overlay.remove();
 
     overlay.appendChild(title);

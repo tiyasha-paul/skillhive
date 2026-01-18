@@ -28,15 +28,15 @@ function categorizeUrl(url) {
         // Educational domains
         const education = [
             'stackoverflow.com', 'github.com', 'udemy.com', 'coursera.org',
-            'edx.org', 'khanacademy.org', 'w3schools.com', 'developer.mozilla.org',
-            'localhost', // For SkillHive itself
-            'chatgpt.com', 'claude.ai', 'gemini.google.com'
+            'edx.org', 'khanacademy.org', 'w3schools.com',
+            'chatgpt.com', 'claude.ai', 'gemini.google.com',
+            'skillhive-gamma.vercel.app', 'linkedin.com'
         ];
 
         // Distraction domains
         const distraction = [
             'facebook.com', 'twitter.com', 'instagram.com', 'tiktok.com',
-            'netflix.com', 'reddit.com', 'twitch.tv'
+            'netflix.com', 'reddit.com', 'twitch.tv', 'x.com'
         ];
 
         if (education.some(d => hostname.includes(d))) {
@@ -64,8 +64,8 @@ function logActivity(tabId, url, title, startTime, endTime) {
 
     const category = categorizeUrl(url, title);
 
-    // Check for distraction alert
-    checkDistractionAlert(category);
+    // Check for distraction alert - REMOVED: Alerts should only come from Alarm/Timer, not from logging history (which happens on tab switch)
+    // checkDistractionAlert(category);
 
     const entry = {
         url,
@@ -123,10 +123,11 @@ function checkDistractionAlert(category) {
             // Trigger In-Page Alert (Overlay)
             chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
                 if (tabs && tabs.length > 0) {
+                    console.log('Sending alert to tab:', tabs[0].url);
                     chrome.tabs.sendMessage(tabs[0].id, {
                         type: 'SHOW_ALERT',
                         message: `You've been on ${category} sites for over ${intervalMinutes} minutes. Time to refocus?`
-                    }).catch(err => console.log('Could not send alert to tab:', err));
+                    }).catch(err => console.log('Could not send alert to tab (content script might be missing):', err));
                 }
             });
 

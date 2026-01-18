@@ -176,7 +176,7 @@ export default function StudentSettings() {
         </header>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+          <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
             <CardHeader>
               <CardTitle>Account Settings</CardTitle>
               <CardDescription>Identity and credentials</CardDescription>
@@ -232,7 +232,7 @@ export default function StudentSettings() {
           </Card>
 
           <div className="space-y-6">
-            <Card className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
+            <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
               <CardHeader>
                 <CardTitle>Notification Settings</CardTitle>
                 <CardDescription>Manage your alerts</CardDescription>
@@ -253,7 +253,7 @@ export default function StudentSettings() {
               </CardContent>
             </Card>
 
-            <Card className={`bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800 ${!extensionDetected ? 'opacity-80' : ''}`}>
+            <Card className={`bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800 ${!extensionDetected ? 'opacity-80' : ''}`}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   Extension Settings

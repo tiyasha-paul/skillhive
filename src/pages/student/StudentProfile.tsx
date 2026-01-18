@@ -424,7 +424,7 @@ export default function StudentProfile() {
         </header>
 
         <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-          <Card>
+          <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
                 <CardTitle>Profile Overview</CardTitle>
@@ -558,7 +558,7 @@ export default function StudentProfile() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
             <CardHeader>
               <div className="flex flex-row items-center justify-between">
                 <div>
@@ -638,7 +638,7 @@ export default function StudentProfile() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
+          <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
             <CardHeader>
               <CardTitle>Learning Statistics</CardTitle>
               <CardDescription>Mastery, difficulty trends, focus signals</CardDescription>
@@ -700,7 +700,7 @@ export default function StudentProfile() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
             <CardHeader>
               <CardTitle>Study & Quiz Insights</CardTitle>
               <CardDescription>Time on task and accuracy trends</CardDescription>
@@ -806,7 +806,7 @@ export default function StudentProfile() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
+          <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
             <CardHeader>
               <CardTitle>Video Watch History</CardTitle>
               <CardDescription>Resume where you left off</CardDescription>
@@ -834,7 +834,7 @@ export default function StudentProfile() {
           </Card>
 
           {userRole === 'mentor' ? (
-            <Card>
+            <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
               <CardHeader>
                 <CardTitle>Mentor Summary</CardTitle>
                 <CardDescription>Active batches and alerts</CardDescription>
@@ -871,7 +871,7 @@ export default function StudentProfile() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
+            <Card className="bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800">
               <CardHeader>
                 <CardTitle>Job Application Summary</CardTitle>
                 <CardDescription>Track applications and recommendations</CardDescription>
@@ -905,18 +905,7 @@ export default function StudentProfile() {
 
 
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Intelligence Statement</CardTitle>
-            <CardDescription>Purpose of this adaptive profile hub</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              The Profile Section allows users to view/edit personal details, track learning progress, monitor quiz performance, manage job application
-              insights, maintain achievements, and visualize real-time statistics tailored to their role ({userRole === 'mentor' ? 'Mentor' : 'Student'}).
-            </p>
-          </CardContent>
-        </Card>
+
       </main>
     </div>
   );

@@ -164,15 +164,14 @@ export default function StudentSettings() {
         <header className="space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm uppercase tracking-wide text-muted-foreground">⚙️ Settings Control Room</p>
-              <h1 className="text-3xl font-semibold text-foreground">Fine-tune your adaptive learning experience</h1>
+              <h1 className="text-3xl font-semibold text-foreground">Fine-tune your learning experience</h1>
               <p className="text-muted-foreground">
-                Manage privacy, notifications, learning modes, chatbot behavior, and job recommendations.
+                Manage your account credentials, scheduled notifications, and browser extension preferences.
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => {
               if (confirm("Reset all local settings to default?")) resetSettings();
-            }}>Reset Defaults</Button>
+            }}>Reset to Default</Button>
           </div>
         </header>
 
@@ -227,25 +226,7 @@ export default function StudentSettings() {
 
               <div className="flex flex-wrap gap-3">
                 <Button onClick={handleAccountSave}>Save account</Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Delete account</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete account?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. All learning history, jobs, and achievements will be removed.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        Delete account
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+
               </div>
             </CardContent>
           </Card>
@@ -342,30 +323,7 @@ export default function StudentSettings() {
 
 
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Logout</CardTitle>
-            <CardDescription>Sign out when you’re done with this session</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">Safe logout ensures your adaptive data stays protected.</p>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline">Logout</Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
-                  <AlertDialogDescription>This will end your current learning session.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={signOut}>Logout</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </CardContent>
-        </Card>
+
       </main>
     </div>
   );

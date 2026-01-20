@@ -61,7 +61,11 @@ export default function StudentTimetable() {
   const [deletingSession, setDeletingSession] = useState<TimetableSession | null>(null);
   const [viewingSession, setViewingSession] = useState<TimetableSession | null>(null);
   const [view, setView] = useState<'weekly' | 'daily' | 'monthly'>('monthly');
-  const [selectedDay, setSelectedDay] = useState<DayOfWeek>('Monday');
+  const [selectedDay, setSelectedDay] = useState<DayOfWeek>(() => {
+    const d = new Date();
+    const days: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[d.getDay()];
+  });
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   // Start week from today's week (anchored to Monday)
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
@@ -468,6 +472,7 @@ export default function StudentTimetable() {
   };
 
   const getSessionsForDay = (day: DayOfWeek): TimetableSession[] => {
+    if (!sessions) return [];
     return sessions.filter(s => s.day === day).sort((a, b) => {
       return a.start_time.localeCompare(b.start_time);
     });
@@ -503,7 +508,7 @@ export default function StudentTimetable() {
     const top = ((startMinutes - dayStart) / dayDuration) * 100;
     const height = ((endMinutes - startMinutes) / dayDuration) * 100;
 
-    return { top: Math.max(0, top), height: Math.max(2, height) };
+    return { top: Math.max(0, top), height: Math.max(0.5, height) };
   };
 
   const getStatusIcon = (status: SessionStatus) => {
@@ -552,12 +557,11 @@ export default function StudentTimetable() {
               style={{
                 top: `${position.top}%`,
                 height: `${position.height}%`,
-                minHeight: '24px',
                 borderLeft: `4px solid ${sessionColor}`,
               }}
               onClick={() => setViewingSession(session)}
             >
-              <div className="p-2 h-full flex flex-col">
+              <div className="p-2 h-full flex flex-col overflow-hidden">
                 <div className="font-medium text-xs text-gray-900 dark:text-gray-100 truncate">
                   {session.subject}
                 </div>

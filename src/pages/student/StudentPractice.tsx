@@ -62,6 +62,7 @@ import {
   Loader2,
   MessageSquare,
   Info,
+  PlayCircle,
 } from 'lucide-react';
 import {
   Popover,
@@ -70,6 +71,7 @@ import {
 } from '@/components/ui/popover';
 import { getQuizResults } from '@/services/quizResults';
 import { Button } from '@/components/ui/button';
+import { VideoNoteTaker } from '@/components/dashboard/VideoNoteTaker';
 import { useNavigate } from 'react-router-dom';
 
 const COLORS = {
@@ -91,7 +93,16 @@ export default function StudentPractice() {
   const [skillData, setSkillData] = useState<SkillRadarData | null>(null);
   const [insights, setInsights] = useState<string[]>([]);
   const [weakAreaVideos, setWeakAreaVideos] = useState<Map<string, YouTubeVideo[]>>(new Map());
+
+
   const [loadingVideos, setLoadingVideos] = useState<Set<string>>(new Set());
+  const [selectedVideo, setSelectedVideo] = useState<YouTubeVideo | null>(null);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+
+  const handleOpenVideo = (video: YouTubeVideo) => {
+    setSelectedVideo(video);
+    setShowVideoPlayer(true);
+  };
 
   useEffect(() => {
     // Record activity when viewing practice page
@@ -707,24 +718,27 @@ Can you give me specific advice on how to improve my weak areas?`;
                                     {!isLoading && videos.length > 0 && (
                                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                                         {videos.map((video, vidIndex) => (
-                                          <a
+                                          <button
                                             key={vidIndex}
-                                            href={`https://www.youtube.com/watch?v=${video.id.videoId}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex gap-2 p-1.5 rounded border hover:bg-muted/50 hover:border-primary transition-all group"
+                                            onClick={() => handleOpenVideo(video)}
+                                            className="flex gap-2 p-1.5 rounded border hover:bg-muted/50 hover:border-primary transition-all group w-full text-left"
                                           >
-                                            <img
-                                              src={video.snippet.thumbnails.medium.url}
-                                              alt={video.snippet.title}
-                                              className="w-16 h-10 object-cover rounded flex-shrink-0"
-                                            />
+                                            <div className="relative w-16 h-10 flex-shrink-0">
+                                              <img
+                                                src={video.snippet.thumbnails.medium.url}
+                                                alt={video.snippet.title}
+                                                className="w-full h-full object-cover rounded"
+                                              />
+                                              <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-colors rounded">
+                                                <PlayCircle className="w-4 h-4 text-white opacity-80" />
+                                              </div>
+                                            </div>
                                             <div className="flex-1 min-w-0">
                                               <div className="text-[10px] font-medium line-clamp-2 group-hover:text-primary transition-colors leading-tight">
                                                 {video.snippet.title}
                                               </div>
                                             </div>
-                                          </a>
+                                          </button>
                                         ))}
                                       </div>
                                     )}
@@ -804,6 +818,11 @@ Can you give me specific advice on how to improve my weak areas?`;
             </CardContent>
           </Card>
         )}
+        <VideoNoteTaker
+          open={showVideoPlayer}
+          onOpenChange={setShowVideoPlayer}
+          initialVideo={selectedVideo}
+        />
       </main>
     </div>
   );

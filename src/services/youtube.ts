@@ -323,12 +323,13 @@ export async function searchVideosForTopic(
   let searchQuery = '';
 
   if (subject) {
-    searchQuery = `${subject} ${topic} tutorial explanation examples practice problems`;
+    searchQuery = `${topic} ${subject}`;
   } else {
-    searchQuery = `${topic} tutorial explanation examples practice problems`;
+    searchQuery = topic;
   }
 
-  searchQuery += ' engineering competitive exam preparation';
+  // Removed extra keywords as per requirement to "lookup only the topic name"
+  // searchQuery += ' engineering competitive exam preparation';
 
   // Check cache first
   const cachedVideos = getCachedVideos(searchQuery, maxResults);

@@ -263,7 +263,7 @@ export default function StudentStudyNotes() {
                       </div>
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col">
-                      {note.summary && (
+                      {note.summary && note.category !== 'video_note' && (
                         <p className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-1">
                           {note.summary}
                         </p>
@@ -453,7 +453,7 @@ export default function StudentStudyNotes() {
                       </div>
                     )}
 
-                    {viewingNote.summary && (
+                    {viewingNote.summary && viewingNote.category !== 'video_note' && (
                       <div className="bg-muted/30 p-4 rounded-lg">
                         <h3 className="font-semibold mb-2">Summary</h3>
                         <div className="text-sm text-muted-foreground whitespace-pre-wrap">

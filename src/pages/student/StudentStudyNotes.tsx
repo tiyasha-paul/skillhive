@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { getStudyNotes, saveStudyNote, deleteStudyNote, getStudyNoteById } from '@/services/studyNotes';
 import { type StudyNote, type NoteSection, type NoteCategory } from '@/data/studyNotes';
 import YouTube, { type YouTubeProps } from 'react-youtube';
+import { VideoNoteTaker } from '@/components/dashboard/VideoNoteTaker';
 
 export default function StudentStudyNotes() {
   const [notes, setNotes] = useState<StudyNote[]>([]);
@@ -21,6 +22,8 @@ export default function StudentStudyNotes() {
   const [editingNote, setEditingNote] = useState<StudyNote | null>(null);
   const [viewingNote, setViewingNote] = useState<StudyNote | null>(null);
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [editingVideoNote, setEditingVideoNote] = useState<StudyNote | null>(null);
+  const [isVideoNoteTakerOpen, setIsVideoNoteTakerOpen] = useState(false);
 
   // Video player ref for viewing notes
   const viewerPlayerRef = useRef<any>(null);
@@ -279,6 +282,23 @@ export default function StudentStudyNotes() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                          {(note.category === 'personal' || note.category === 'video_note') && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (note.category === 'video_note') {
+                                  setEditingVideoNote(note);
+                                  setIsVideoNoteTakerOpen(true);
+                                } else {
+                                  handleEditNote(note);
+                                }
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             onClick={() => setViewingNote(note)}
@@ -477,6 +497,16 @@ export default function StudentStudyNotes() {
           </DialogContent>
         </Dialog>
       </main>
+
+      {/* Video Note Taker (Edit Mode) */}
+      <VideoNoteTaker
+        open={isVideoNoteTakerOpen}
+        onOpenChange={(open) => {
+          setIsVideoNoteTakerOpen(open);
+          if (!open) setEditingVideoNote(null);
+        }}
+        initialNote={editingVideoNote}
+      />
     </div>
   );
 }

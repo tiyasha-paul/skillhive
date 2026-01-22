@@ -4,8 +4,7 @@
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 
 // Use v1beta endpoint with a modern Flash model.
-// You requested Gemini 2.x Flash; update GEMINI_MODEL if your key supports 2.5.
-// Examples: 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-2.5-flash'.
+// Using 'gemini-flash-latest' as confirmed by API availability check
 const GEMINI_MODEL = 'gemini-flash-latest';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 

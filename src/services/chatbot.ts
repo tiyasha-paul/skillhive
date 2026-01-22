@@ -129,7 +129,9 @@ ${profile.extensionStats ? `
 }
 
 function generateFallbackResponse(prompt: string, profile: ProfileSignals, error?: unknown) {
-  return "I'm having trouble connecting to the service right now. Please check your internet connection or try again later.";
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  // Return the actual error for debugging purposes
+  return `Service Error: ${errorMessage}. Please check API key and internet connection.`;
 }
 
 

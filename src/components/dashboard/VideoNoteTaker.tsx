@@ -12,28 +12,74 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { useIsMobile } from "@/hooks/use-mobile";
 import YouTube, { type YouTubeProps } from 'react-youtube';
 
+import { StudyNote } from '@/data/studyNotes';
+
 interface VideoNoteTakerProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    initialVideo?: YouTubeVideo | null;
+    initialNote?: StudyNote | null;
 }
 
-export function VideoNoteTaker({ open, onOpenChange, initialVideo }: VideoNoteTakerProps & { initialVideo?: YouTubeVideo | null }) {
+export function VideoNoteTaker({ open, onOpenChange, initialVideo, initialNote }: VideoNoteTakerProps) {
     const isMobile = useIsMobile();
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<YouTubeVideo[]>([]);
     const [isSearching, setIsSearching] = useState(false);
-    const [selectedVideo, setSelectedVideo] = useState<YouTubeVideo | null>(initialVideo || null);
 
-    // Update selected video when initialVideo prop changes
-    useEffect(() => {
-        if (initialVideo) {
-            handleVideoSelect(initialVideo);
-        }
-    }, [initialVideo]);
+    // Initialize state based on whether we are editing a note or starting fresh
+    const [selectedVideo, setSelectedVideo] = useState<YouTubeVideo | null>(
+        initialVideo || (initialNote ? {
+            id: { videoId: initialNote.videoId || initialNote.videoUrl?.split('v=')[1] || '' },
+            snippet: {
+                title: initialNote.sources?.[0]?.title || 'Video',
+                description: initialNote.sources?.[0]?.snippet || '',
+                channelTitle: initialNote.topics?.[1] || 'Unknown Channel', // We stored channel title in topics[1]
+                thumbnails: {
+                    medium: { url: `https://img.youtube.com/vi/${initialNote.videoId || initialNote.videoUrl?.split('v=')[1]}/mqdefault.jpg` },
+                    high: { url: `https://img.youtube.com/vi/${initialNote.videoId || initialNote.videoUrl?.split('v=')[1]}/hqdefault.jpg` }
+                }
+            }
+        } as YouTubeVideo : null)
+    );
 
-    const [noteTitle, setNoteTitle] = useState('');
-    const [noteContent, setNoteContent] = useState('');
+    const [noteTitle, setNoteTitle] = useState(initialNote?.title || '');
+    const [noteContent, setNoteContent] = useState(
+        initialNote?.content?.[0]?.content ||
+        initialNote?.summary ||
+        ''
+    );
     const [isSaving, setIsSaving] = useState(false);
+
+    // Update state when props change (e.g. reopening with different note/video)
+    useEffect(() => {
+        if (open) {
+            if (initialNote) {
+                setSelectedVideo({
+                    id: { videoId: initialNote.videoId || initialNote.videoUrl?.split('v=')[1] || '' },
+                    snippet: {
+                        title: initialNote.sources?.[0]?.title || 'Video',
+                        description: initialNote.sources?.[0]?.snippet || '',
+                        channelTitle: initialNote.topics?.[1] || 'Unknown Channel',
+                        thumbnails: {
+                            medium: { url: `https://img.youtube.com/vi/${initialNote.videoId || initialNote.videoUrl?.split('v=')[1]}/mqdefault.jpg` },
+                            high: { url: `https://img.youtube.com/vi/${initialNote.videoId || initialNote.videoUrl?.split('v=')[1]}/hqdefault.jpg` }
+                        }
+                    }
+                } as YouTubeVideo);
+                setNoteTitle(initialNote.title);
+                setNoteContent(initialNote.content?.[0]?.content || initialNote.summary || '');
+            } else if (initialVideo) {
+                handleVideoSelect(initialVideo);
+            } else {
+                // Reset if opening empty
+                if (!selectedVideo && !noteTitle) {
+                    setNoteTitle('');
+                    setNoteContent('');
+                }
+            }
+        }
+    }, [open, initialVideo, initialNote]);
 
     // Video Player Reference
     const playerRef = useRef<any>(null);
@@ -84,8 +130,11 @@ export function VideoNoteTaker({ open, onOpenChange, initialVideo }: VideoNoteTa
 
     const handleVideoSelect = (video: YouTubeVideo) => {
         setSelectedVideo(video);
-        setNoteTitle(`Notes: ${video.snippet.title}`);
-        setNoteContent('');
+        // Only set title/content if NOT editing an existing note
+        if (!initialNote) {
+            setNoteTitle(`Notes: ${video.snippet.title}`);
+            setNoteContent('');
+        }
     };
 
     const handleBackToSearch = () => {
@@ -116,7 +165,8 @@ export function VideoNoteTaker({ open, onOpenChange, initialVideo }: VideoNoteTa
 
         setIsSaving(true);
         try {
-            await saveStudyNote({
+            const noteData: StudyNote = {
+                id: initialNote?.id || undefined, // undefined will cause saveStudyNote to generate a new ID
                 title: noteTitle,
                 category: 'video_note',
                 subject: 'Video Learning',
@@ -141,12 +191,29 @@ export function VideoNoteTaker({ open, onOpenChange, initialVideo }: VideoNoteTa
                         snippet: selectedVideo.snippet.description,
                         fetchedAt: new Date().toISOString()
                     }
-                ]
-            });
+                ],
+                createdAt: initialNote?.createdAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                // Preserve other fields if editing
+                rating: initialNote?.rating || { up: 0, down: 0 },
+                userRating: initialNote?.userRating,
+                bookmarked: initialNote?.bookmarked || false,
+                visibility: initialNote?.visibility || 'private'
+            };
+
+            await saveStudyNote(noteData);
 
             toast.success('Note saved successfully!');
-            setNoteTitle('');
-            setNoteContent('');
+
+            // Only clear if creating new, otherwise user might want to keep editing? 
+            // Usually valid to close or clear. Let's reset for now or close.
+            if (!initialNote) {
+                setNoteTitle('');
+                setNoteContent('');
+            }
+
+            // Notify parent to close or refresh
+            onOpenChange(false);
 
         } catch (error) {
             console.error('Failed to save note:', error);

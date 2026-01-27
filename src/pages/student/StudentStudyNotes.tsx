@@ -140,8 +140,18 @@ export default function StudentStudyNotes() {
 
   // Helper to render text with clickable timestamps using HTML
   const renderContent = (content: string) => {
+    // Decode HTML entities if present to fix double-escaping issue
+    let decodedContent = content;
+    // Simple unescape for common entities
+    decodedContent = decodedContent
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+
     // Replace timestamps with clickable spans
-    const htmlWithTimestamps = content.replace(/\[\[(\d{2}):(\d{2})\]\]/g, (match, min, sec) => {
+    const htmlWithTimestamps = decodedContent.replace(/\[\[(\d{2}):(\d{2})\]\]/g, (match, min, sec) => {
       const totalSeconds = parseInt(min) * 60 + parseInt(sec);
       return `<button class="timestamp-btn inline-flex items-center gap-0.5 text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded cursor-pointer mx-1 font-mono text-sm transition-colors border-none align-baseline" data-timestamp="${totalSeconds}">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>

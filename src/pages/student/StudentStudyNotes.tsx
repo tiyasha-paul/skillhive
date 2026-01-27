@@ -7,10 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, Plus, Edit2, Trash2, FileText, Clock, PlayCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import Markdown from 'markdown-to-jsx';
+import { RichTextEditor } from '@/components/RichTextEditor';
 import { getStudyNotes, saveStudyNote, deleteStudyNote, getStudyNoteById } from '@/services/studyNotes';
 import { type StudyNote, type NoteSection, type NoteCategory } from '@/data/studyNotes';
 import YouTube, { type YouTubeProps } from 'react-youtube';
@@ -59,8 +62,8 @@ export default function StudentStudyNotes() {
   };
 
   const handleCreateNote = () => {
-    if (!noteForm.title.trim() || !noteForm.subject.trim()) {
-      toast.error('Title and Subject are required');
+    if (!noteForm.title.trim()) {
+      toast.error('Title is required');
       return;
     }
 
@@ -118,24 +121,7 @@ export default function StudentStudyNotes() {
     }
   };
 
-  const addSection = () => {
-    setNoteForm({
-      ...noteForm,
-      sections: [...noteForm.sections, { heading: '', content: '' }]
-    });
-  };
 
-  const updateSection = (index: number, field: 'heading' | 'content', value: string) => {
-    const newSections = [...noteForm.sections];
-    newSections[index][field] = value;
-    setNoteForm({ ...noteForm, sections: newSections });
-  };
-
-  const removeSection = (index: number) => {
-    if (noteForm.sections.length <= 1) return;
-    const newSections = noteForm.sections.filter((_, i) => i !== index);
-    setNoteForm({ ...noteForm, sections: newSections });
-  };
 
   const getReadingTime = (sections: NoteSection[]) => {
     if (!sections) return 1;
@@ -154,30 +140,24 @@ export default function StudentStudyNotes() {
     }
   };
 
-  // Helper to render text with clickable timestamps
-  const renderContentWithTimestamps = (text: string) => {
-    const parts = text.split(/(\[\[\d{2}:\d{2}\]\])/g);
-    return parts.map((part, index) => {
-      if (part.match(/^\[\[\d{2}:\d{2}\]\]$/)) {
-        const timeString = part.slice(2, -2);
-        const [min, sec] = timeString.split(':').map(Number);
-        const totalSeconds = min * 60 + sec;
 
-        return (
-          <span
-            key={index}
-            onClick={() => seekToTimestamp(totalSeconds)}
-            className="inline-flex items-center gap-0.5 text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded cursor-pointer mx-1 font-mono text-sm transition-colors"
-            title={`Jump to ${timeString}`}
-          >
-            <PlayCircle className="w-3 h-3" />
-            {timeString}
-          </span>
-        );
-      }
-      return part;
-    });
+
+  const TimestampComponent = ({ time }: { time: string }) => {
+    const [min, sec] = time.split(':').map(Number);
+    const totalSeconds = min * 60 + sec;
+    return (
+      <span
+        onClick={() => seekToTimestamp(totalSeconds)}
+        className="inline-flex items-center gap-0.5 text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded cursor-pointer mx-1 font-mono text-sm transition-colors align-baseline"
+        title={`Jump to ${time}`}
+      >
+        <PlayCircle className="w-3 h-3" />
+        {time}
+      </span>
+    );
   };
+
+
 
   const filteredNotes = getFilteredNotes();
 
@@ -248,17 +228,16 @@ export default function StudentStudyNotes() {
                         <div className="flex-1">
                           <CardTitle className="text-lg mb-2 line-clamp-2">{note.title}</CardTitle>
                           <CardDescription className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline">{note.subject}</Badge>
-                            {note.category === 'video_note' && (
-                              <Badge variant="secondary" className="bg-red-100 text-red-800 hover:bg-red-200">
-                                <PlayCircle className="w-3 h-3 mr-1" /> Video
+                            {note.category === 'video_note' ? (
+                              <Badge variant="outline">
+                                <PlayCircle className="w-3 h-3 mr-1" /> Video Note
                               </Badge>
+                            ) : (
+                              <Badge variant="outline">Personal Note</Badge>
                             )}
-                            <Badge variant="secondary" className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {note.meta?.readingTime || getReadingTime(note.content)} min
-                            </Badge>
                           </CardDescription>
+
+
                         </div>
                       </div>
                     </CardHeader>
@@ -271,7 +250,7 @@ export default function StudentStudyNotes() {
 
                       <div className="flex items-center justify-between mt-auto pt-4 border-t">
                         <span className="text-xs text-muted-foreground">
-                          {new Date(note.updatedAt || new Date()).toLocaleDateString('en-GB')}
+                          Created: {new Date(note.createdAt || new Date()).toLocaleDateString('en-GB')}
                         </span>
                         <div className="flex gap-2">
                           <Button
@@ -319,7 +298,7 @@ export default function StudentStudyNotes() {
 
         {/* Create/Edit Note Dialog */}
         <Dialog open={createNoteOpen} onOpenChange={setCreateNoteOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle>{editingNote ? 'Edit Personal Note' : 'Create New Personal Note'}</DialogTitle>
               <DialogDescription>
@@ -341,7 +320,7 @@ export default function StudentStudyNotes() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="note-subject">Subject *</Label>
+                      <Label htmlFor="note-subject">Subject</Label>
                       <Input
                         id="note-subject"
                         placeholder="e.g., Computer Science"
@@ -352,55 +331,19 @@ export default function StudentStudyNotes() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="note-summary">Summary (Optional)</Label>
-                    <Textarea
-                      id="note-summary"
-                      placeholder="Enter a brief summary..."
-                      className="resize-none"
-                      rows={2}
-                      value={noteForm.summary}
-                      onChange={(e) => setNoteForm({ ...noteForm, summary: e.target.value })}
+                    <Label htmlFor="note-content">Note Content</Label>
+                    <RichTextEditor
+                      content={noteForm.sections[0]?.content || ''}
+                      onChange={(content) => {
+                        const newSections = [...noteForm.sections];
+                        if (newSections.length === 0) {
+                          newSections.push({ heading: '', content: '' });
+                        }
+                        newSections[0] = { ...newSections[0], content: content };
+                        setNoteForm({ ...noteForm, sections: newSections });
+                      }}
+                      className="min-h-[300px]"
                     />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">Content Sections</h3>
-                    <Button variant="outline" size="sm" onClick={addSection}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Section
-                    </Button>
-                  </div>
-
-                  <div className="space-y-4">
-                    {noteForm.sections.map((section, idx) => (
-                      <div key={idx} className="p-4 border rounded-lg bg-muted/30 relative group">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                          onClick={() => removeSection(idx)}
-                          disabled={noteForm.sections.length <= 1}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        <div className="space-y-3">
-                          <Input
-                            placeholder="Section Heading"
-                            className="bg-background font-semibold"
-                            value={section.heading}
-                            onChange={(e) => updateSection(idx, 'heading', e.target.value)}
-                          />
-                          <Textarea
-                            placeholder="Section content..."
-                            className="bg-background min-h-[100px]"
-                            value={section.content}
-                            onChange={(e) => updateSection(idx, 'content', e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </div>
               </div>
@@ -428,11 +371,13 @@ export default function StudentStudyNotes() {
                     {viewingNote.title}
                   </DialogTitle>
                   <DialogDescription className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="outline">{viewingNote.subject}</Badge>
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {viewingNote.meta?.readingTime || getReadingTime(viewingNote.content)} min read
-                    </Badge>
+                    {viewingNote.category === 'video_note' ? (
+                      <Badge variant="outline">
+                        <PlayCircle className="w-3 h-3 mr-1" /> Video Note
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">Personal Note</Badge>
+                    )}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -456,8 +401,10 @@ export default function StudentStudyNotes() {
                     {viewingNote.summary && viewingNote.category !== 'video_note' && (
                       <div className="bg-muted/30 p-4 rounded-lg">
                         <h3 className="font-semibold mb-2">Summary</h3>
-                        <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                          {renderContentWithTimestamps(viewingNote.summary)}
+                        <div className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
+                          <Markdown options={{ overrides: { Timestamp: { component: TimestampComponent } } }}>
+                            {viewingNote.summary.replace(/\[\[(\d{2}:\d{2})\]\]/g, '<Timestamp time="$1"/>')}
+                          </Markdown>
                         </div>
                       </div>
                     )}
@@ -465,8 +412,10 @@ export default function StudentStudyNotes() {
                     {viewingNote.content && viewingNote.content.map((section, idx) => (
                       <div key={idx}>
                         <h3 className="font-semibold mb-2">{section.heading}</h3>
-                        <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                          {renderContentWithTimestamps(section.content)}
+                        <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
+                          <Markdown options={{ overrides: { Timestamp: { component: TimestampComponent } } }}>
+                            {section.content.replace(/\[\[(\d{2}:\d{2})\]\]/g, '<Timestamp time="$1"/>')}
+                          </Markdown>
                         </div>
                       </div>
                     ))}
@@ -475,7 +424,7 @@ export default function StudentStudyNotes() {
 
                 <div className="flex justify-between items-center pt-4 border-t">
                   <span className="text-xs text-muted-foreground">
-                    Last updated: {viewingNote.updatedAt ? new Date(viewingNote.updatedAt).toLocaleDateString('en-GB') : 'N/A'}
+                    Created: {viewingNote.createdAt ? new Date(viewingNote.createdAt).toLocaleDateString('en-GB') : 'N/A'}
                   </span>
                   <div className="flex gap-2">
                     {viewingNote.category === 'personal' && (
@@ -507,6 +456,6 @@ export default function StudentStudyNotes() {
         }}
         initialNote={editingVideoNote}
       />
-    </div>
+    </div >
   );
 }

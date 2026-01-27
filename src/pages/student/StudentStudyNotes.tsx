@@ -342,7 +342,7 @@ export default function StudentStudyNotes() {
                         newSections[0] = { ...newSections[0], content: content };
                         setNoteForm({ ...noteForm, sections: newSections });
                       }}
-                      className="min-h-[300px]"
+                      className="min-h-[300px] max-h-[500px]"
                     />
                   </div>
                 </div>

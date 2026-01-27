@@ -29,7 +29,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
         // Fix for SSR or rapid updates if needed, though usually standard setup is fine.
         editorProps: {
             attributes: {
-                class: `prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[150px] p-2 ${className}`,
+                class: `prose prose-sm dark:prose-invert max-w-none focus:outline-none h-full`,
             },
         },
     });
@@ -37,27 +37,12 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
     // Sync content updates from parent if needed (e.g. loading a note)
     useEffect(() => {
         if (editor && content !== editor.getHTML()) {
-            // Only update if content is significantly different to avoid cursor jumps
-            // A simple check might not be enough for real-time collab but fine here
             if (editor.isEmpty && !content) return;
-            // We'll trust the parent's content is the source of truth if it changes drastically
-            // But usually for local state we rely on onUpdate.
-            // A better pattern for controlled input is tricky with Tiptap.
-            // For this use case (Load -> Edit), this Effect is mainly for initial load.
-            // checking if editor content matches props to avoid loop
         }
     }, [content, editor]);
 
-    // Actually, for "controlled" component behavior, we need to handle external updates carefully.
-    // For this specific app, we load `initialNote` once.
-    // So we might rely on the initial content passed to `useEditor`.
-    // However, `VideoNoteTaker` updates content with Timestamps externally.
-    // So we DO need to handle `useEffect` to update editor command.
-
     useEffect(() => {
         if (editor && content !== editor.getHTML()) {
-            // Avoid setting content if it's the same to prevent cursor reset
-            // This simple check works for full replacements (like timestamp insertion)
             editor.commands.setContent(content);
         }
     }, [content, editor]);
@@ -68,8 +53,8 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
     }
 
     return (
-        <div className="space-y-2 border rounded-md p-2 bg-background/50">
-            <div className="flex items-center gap-1 border-b pb-2 mb-2">
+        <div className={`flex flex-col border rounded-md bg-background/50 ${className}`}>
+            <div className="flex items-center gap-1 border-b p-2 bg-muted/40 shrink-0">
                 <Button
                     variant={editor.isActive('bold') ? 'secondary' : 'ghost'}
                     size="icon"
@@ -121,7 +106,12 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
                     <List className="w-4 h-4" />
                 </Button>
             </div>
-            <EditorContent editor={editor} />
+            <div
+                className="flex-1 overflow-y-auto cursor-text p-2"
+                onClick={() => editor.chain().focus().run()}
+            >
+                <EditorContent editor={editor} className="h-full min-h-[150px]" />
+            </div>
         </div>
     );
 }

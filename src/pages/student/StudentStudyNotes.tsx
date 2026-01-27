@@ -138,29 +138,31 @@ export default function StudentStudyNotes() {
     }
   };
 
-  // Helper to render text with clickable timestamps
-  const renderContentWithTimestamps = (text: string) => {
-    const parts = text.split(/(\[\[\d{2}:\d{2}\]\])/g);
-    return parts.map((part, index) => {
-      if (part.match(/^\[\[\d{2}:\d{2}\]\]$/)) {
-        const timeString = part.slice(2, -2);
-        const [min, sec] = timeString.split(':').map(Number);
-        const totalSeconds = min * 60 + sec;
-
-        return (
-          <span
-            key={index}
-            onClick={() => seekToTimestamp(totalSeconds)}
-            className="inline-flex items-center gap-0.5 text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded cursor-pointer mx-1 font-mono text-sm transition-colors"
-            title={`Jump to ${timeString}`}
-          >
-            <PlayCircle className="w-3 h-3" />
-            {timeString}
-          </span>
-        );
-      }
-      return part;
+  // Helper to render text with clickable timestamps using HTML
+  const renderContent = (content: string) => {
+    // Replace timestamps with clickable spans
+    const htmlWithTimestamps = content.replace(/\[\[(\d{2}):(\d{2})\]\]/g, (match, min, sec) => {
+      const totalSeconds = parseInt(min) * 60 + parseInt(sec);
+      return `<button class="timestamp-btn inline-flex items-center gap-0.5 text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded cursor-pointer mx-1 font-mono text-sm transition-colors border-none align-baseline" data-timestamp="${totalSeconds}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        ${min}:${sec}
+      </button>`;
     });
+
+    return (
+      <div
+        className="prose prose-sm max-w-none dark:prose-invert [&_p]:mb-2 [&_a]:text-primary [&_a]:underline hover:[&_a]:text-primary/80"
+        dangerouslySetInnerHTML={{ __html: htmlWithTimestamps }}
+        onClick={(e) => {
+          const target = (e.target as HTMLElement).closest('.timestamp-btn');
+          if (target) {
+            e.preventDefault();
+            const seconds = Number(target.getAttribute('data-timestamp'));
+            seekToTimestamp(seconds);
+          }
+        }}
+      />
+    );
   };
 
   const filteredNotes = getFilteredNotes();
@@ -247,9 +249,9 @@ export default function StudentStudyNotes() {
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col">
                       {note.summary && note.category !== 'video_note' && (
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-1">
-                          {note.summary}
-                        </p>
+                        <div className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-1">
+                          <div dangerouslySetInnerHTML={{ __html: note.summary }} />
+                        </div>
                       )}
 
                       <div className="flex items-center justify-between mt-auto pt-4 border-t">
@@ -408,7 +410,7 @@ export default function StudentStudyNotes() {
                       <div className="bg-muted/30 p-4 rounded-lg">
                         <h3 className="font-semibold mb-2">Summary</h3>
                         <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                          {renderContentWithTimestamps(viewingNote.summary)}
+                          {renderContent(viewingNote.summary)}
                         </div>
                       </div>
                     )}
@@ -416,8 +418,8 @@ export default function StudentStudyNotes() {
                     {viewingNote.content && viewingNote.content.map((section, idx) => (
                       <div key={idx}>
                         <h3 className="font-semibold mb-2">{section.heading}</h3>
-                        <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                          {renderContentWithTimestamps(section.content)}
+                        <div className="text-sm leading-relaxed">
+                          {renderContent(section.content)}
                         </div>
                       </div>
                     ))}

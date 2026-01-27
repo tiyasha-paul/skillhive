@@ -12,8 +12,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, Plus, Edit2, Trash2, FileText, Clock, PlayCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import Markdown from 'markdown-to-jsx';
-import { RichTextEditor } from '@/components/RichTextEditor';
 import { getStudyNotes, saveStudyNote, deleteStudyNote, getStudyNoteById } from '@/services/studyNotes';
 import { type StudyNote, type NoteSection, type NoteCategory } from '@/data/studyNotes';
 import YouTube, { type YouTubeProps } from 'react-youtube';
@@ -140,24 +138,30 @@ export default function StudentStudyNotes() {
     }
   };
 
+  // Helper to render text with clickable timestamps
+  const renderContentWithTimestamps = (text: string) => {
+    const parts = text.split(/(\[\[\d{2}:\d{2}\]\])/g);
+    return parts.map((part, index) => {
+      if (part.match(/^\[\[\d{2}:\d{2}\]\]$/)) {
+        const timeString = part.slice(2, -2);
+        const [min, sec] = timeString.split(':').map(Number);
+        const totalSeconds = min * 60 + sec;
 
-
-  const TimestampComponent = ({ time }: { time: string }) => {
-    const [min, sec] = time.split(':').map(Number);
-    const totalSeconds = min * 60 + sec;
-    return (
-      <span
-        onClick={() => seekToTimestamp(totalSeconds)}
-        className="inline-flex items-center gap-0.5 text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded cursor-pointer mx-1 font-mono text-sm transition-colors align-baseline"
-        title={`Jump to ${time}`}
-      >
-        <PlayCircle className="w-3 h-3" />
-        {time}
-      </span>
-    );
+        return (
+          <span
+            key={index}
+            onClick={() => seekToTimestamp(totalSeconds)}
+            className="inline-flex items-center gap-0.5 text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded cursor-pointer mx-1 font-mono text-sm transition-colors"
+            title={`Jump to ${timeString}`}
+          >
+            <PlayCircle className="w-3 h-3" />
+            {timeString}
+          </span>
+        );
+      }
+      return part;
+    });
   };
-
-
 
   const filteredNotes = getFilteredNotes();
 
@@ -332,17 +336,19 @@ export default function StudentStudyNotes() {
 
                   <div className="space-y-2">
                     <Label htmlFor="note-content">Note Content</Label>
-                    <RichTextEditor
-                      content={noteForm.sections[0]?.content || ''}
-                      onChange={(content) => {
+                    <Textarea
+                      id="note-content"
+                      placeholder="Write your note here..."
+                      className="min-h-[300px] font-mono text-sm leading-relaxed"
+                      value={noteForm.sections[0]?.content || ''}
+                      onChange={(e) => {
                         const newSections = [...noteForm.sections];
                         if (newSections.length === 0) {
                           newSections.push({ heading: '', content: '' });
                         }
-                        newSections[0] = { ...newSections[0], content: content };
+                        newSections[0] = { ...newSections[0], content: e.target.value };
                         setNoteForm({ ...noteForm, sections: newSections });
                       }}
-                      className="min-h-[300px] max-h-[500px]"
                     />
                   </div>
                 </div>
@@ -401,10 +407,8 @@ export default function StudentStudyNotes() {
                     {viewingNote.summary && viewingNote.category !== 'video_note' && (
                       <div className="bg-muted/30 p-4 rounded-lg">
                         <h3 className="font-semibold mb-2">Summary</h3>
-                        <div className="text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
-                          <Markdown options={{ overrides: { Timestamp: { component: TimestampComponent } } }}>
-                            {viewingNote.summary.replace(/\[\[(\d{2}:\d{2})\]\]/g, '<Timestamp time="$1"/>')}
-                          </Markdown>
+                        <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {renderContentWithTimestamps(viewingNote.summary)}
                         </div>
                       </div>
                     )}
@@ -412,10 +416,8 @@ export default function StudentStudyNotes() {
                     {viewingNote.content && viewingNote.content.map((section, idx) => (
                       <div key={idx}>
                         <h3 className="font-semibold mb-2">{section.heading}</h3>
-                        <div className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
-                          <Markdown options={{ overrides: { Timestamp: { component: TimestampComponent } } }}>
-                            {section.content.replace(/\[\[(\d{2}:\d{2})\]\]/g, '<Timestamp time="$1"/>')}
-                          </Markdown>
+                        <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                          {renderContentWithTimestamps(section.content)}
                         </div>
                       </div>
                     ))}

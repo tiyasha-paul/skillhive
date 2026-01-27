@@ -7,7 +7,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { searchYouTubeVideos, extractVideoId, getVideoById, type YouTubeVideo } from '@/services/youtube';
 import { saveStudyNote } from '@/services/studyNotes';
 import { Loader2, Search, ArrowLeft, Save, PlayCircle, Clock, X } from 'lucide-react';
-import { RichTextEditor } from '@/components/RichTextEditor';
 import { toast } from 'sonner';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -157,8 +156,6 @@ export function VideoNoteTaker({ open, onOpenChange, initialVideo, initialNote }
 
         setNoteContent(prev => prev + (prev.endsWith(' ') || prev.length === 0 ? '' : ' ') + formattedTime + ' ');
     };
-
-
 
     const handleSaveNote = async () => {
         if (!selectedVideo || !noteTitle.trim()) {
@@ -355,12 +352,12 @@ export function VideoNoteTaker({ open, onOpenChange, initialVideo, initialNote }
                                             className="font-medium"
                                         />
                                     </div>
-                                    <div className="flex-1 p-4 overflow-hidden flex flex-col gap-2">
-                                        <RichTextEditor
-                                            content={noteContent}
-                                            onChange={setNoteContent}
+                                    <div className="flex-1 p-4 overflow-hidden">
+                                        <Textarea
                                             placeholder="Type your notes here... Click 'Timestamp' to mark important moments."
-                                            className="h-full border-0 focus-visible:ring-0"
+                                            value={noteContent}
+                                            onChange={(e) => setNoteContent(e.target.value)}
+                                            className="h-full resize-none border-0 focus-visible:ring-0 text-base font-mono"
                                         />
                                     </div>
                                     <div className="p-4 border-t bg-muted/10">

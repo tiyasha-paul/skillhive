@@ -102,11 +102,22 @@ export default function StudentStudyNotes() {
 
   const handleEditNote = (note: StudyNote) => {
     setEditingNote(note);
+    // Decode content for editing so user sees actual HTML/text
+    const decodedSections = (note.content && note.content.length > 0 ? note.content : [{ heading: '', content: '' }]).map(section => ({
+      ...section,
+      content: section.content
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+    }));
+
     setNoteForm({
       title: note.title,
       subject: note.subject,
       summary: note.summary,
-      sections: note.content && note.content.length > 0 ? note.content : [{ heading: '', content: '' }]
+      sections: decodedSections
     });
     setCreateNoteOpen(true);
   };
